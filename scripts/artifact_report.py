@@ -61,6 +61,12 @@ def _format_text_table_cell(value):
     )
 
 
+def _format_html_no_escape_cell(value):
+    if isinstance(value, TrustedHtml):
+        return f'<td>{str(value)}</td>'
+    return f'<td>{sanitize_html_fragment(_normalize_cell_value(value))}</td>'
+
+
 def _escape_inline_script_literal(literal):
     # Prevent </script> and HTML parser breakouts in inline script blocks.
     return (
@@ -185,13 +191,15 @@ class ArtifactHtmlReport:
             '<tr>' + ''.join(('<th class="th-sm">{}</th>'.format(html.escape(str(x))) for x in data_headers)) + '</tr>')
         self.report_file.write('</thead><tbody>')
 
+        html_no_escape = html_no_escape or []
+
         if html_escape:
             for row in data_list:
                 if html_no_escape:
                     self.report_file.write('<tr>' + ''.join((
                         _format_text_table_cell(x)
                         if h not in html_no_escape
-                        else '<td>{}</td>'.format(sanitize_html_fragment(_normalize_cell_value(x)))
+                        else _format_html_no_escape_cell(x)
                         for x, h in zip(row, data_headers)
                     )) + '</tr>')
                 else:
@@ -230,9 +238,11 @@ class ArtifactHtmlReport:
         self.report_file.write(f'<p class="lead">{escape_text(text)}</p>')
 
     def write_raw_html(self, code):
-        if not isinstance(code, TrustedHtml):
-            raise TypeError('write_raw_html only accepts TrustedHtml instances')
-        self.report_file.write(str(code))
+        if isinstance(code, TrustedHtml):
+            self.report_file.write(str(code))
+            return
+        # Backward compatibility for custom artifacts still passing strings.
+        self.report_file.write(sanitize_html_fragment(str(code) if code is not None else ''))
 
     def end_artifact_report(self):
         if self.report_file:
@@ -242,7 +252,7 @@ class ArtifactHtmlReport:
 
     # Add image to artifact
     def add_image_file(self, param, param1, param2, secondImage=False):
-        safe_src = escape_attr(sanitize_url(param, allow_data_media=True))
+        safe_src = escape_attr(sanitize_url(param, allow_data_media=True, allow_file=True))
         safe_alt = escape_attr(param1)
         safe_title_attr = escape_attr(param2)
         safe_title_text = escape_text(param2)

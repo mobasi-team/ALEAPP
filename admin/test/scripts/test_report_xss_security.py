@@ -199,15 +199,16 @@ class TestReportXssSecurity(unittest.TestCase):
             self.assertNotIn('javascript:alert(1)', data)
             self.assertNotIn('onclick="x()"', data)
 
-    def test_write_raw_html_requires_trusted_html(self):
+    def test_write_raw_html_sanitizes_untrusted_and_accepts_trusted(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             report = self._build_report(tmpdir)
-            with self.assertRaises(TypeError):
-                report.write_raw_html('<b>unsafe</b>')
+            report.write_raw_html('<img src=x onerror="alert(1)"><b>unsafe</b>')
             report.write_raw_html(trust_html('<b>safe</b>'))
             report.end_artifact_report()
 
             data = self._read_report_file(tmpdir)
+            self.assertNotIn('onerror=', data.lower())
+            self.assertIn('<b>unsafe</b>', data)
             self.assertIn('<b>safe</b>', data)
 
     def test_aleapp_sink_helpers_sanitize_untrusted_input(self):

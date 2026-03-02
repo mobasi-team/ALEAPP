@@ -40,6 +40,14 @@ class TestHtmlSecurity(unittest.TestCase):
             'data:image/png;base64,AAAA',
         )
 
+    def test_sanitize_url_blocks_file_and_ftp_by_default(self):
+        self.assertEqual(sanitize_url('file:///tmp/evidence.jpg'), '#')
+        self.assertEqual(sanitize_url('ftp://example.org/evidence.jpg'), '#')
+
+    def test_sanitize_url_allows_local_paths_when_opted_in(self):
+        win_path = r'C:\\cases\\artifact.jpg'
+        self.assertEqual(sanitize_url(win_path, allow_file=True), win_path)
+
     def test_sanitize_html_fragment_strips_scripts_and_unsafe_attrs(self):
         dirty = '<p onclick="evil()">ok</p><script>alert(1)</script><a href="javascript:1">x</a>'
         clean = sanitize_html_fragment(dirty)

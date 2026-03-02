@@ -236,7 +236,7 @@ def html_media_tag(media_path, mimetype, style, title=''):
 
     filename = Path(media_path).name
     media_path = quote(relative_paths(media_path))
-    media_url = escape_attr(sanitize_url(media_path, allow_data_media=True))
+    media_url = escape_attr(sanitize_url(media_path, allow_data_media=True, allow_file=True))
     safe_title = escape_attr(title)
     image_style = style if style else "max-height:300px; max-width:400px;"
     if re.search(r'(expression|url\s*\(|javascript:|@import)', image_style, re.IGNORECASE):
