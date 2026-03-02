@@ -1,6 +1,14 @@
 import os
+import sys
 import tempfile
 import unittest
+
+
+ROOT_DIR = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
 
 from scripts.tools import audit_raw_html_sinks
 
@@ -22,7 +30,7 @@ class TestAuditXssSinks(unittest.TestCase):
             self.assertIn('innerHTML', messages)
 
     def test_repo_sinks_are_clean(self):
-        repo_scripts = '/Users/js/consulting_work/side_projects/ALEAPP/scripts'
+        repo_scripts = os.path.join(ROOT_DIR, 'scripts')
         findings = audit_raw_html_sinks.audit_paths([repo_scripts])
         self.assertEqual(findings, [])
 

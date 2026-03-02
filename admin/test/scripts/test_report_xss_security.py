@@ -1,8 +1,16 @@
 import os
 import re
+import sys
 import tempfile
 import unittest
 from unittest import mock
+
+
+REPO_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
 
 from scripts.artifact_report import ArtifactHtmlReport
 from scripts.html_security import trust_html
@@ -17,8 +25,6 @@ import scripts.artifacts.wellbeingaccount as wellbeingaccount_artifact
 import scripts.ilapfuncs as ilapfuncs
 import scripts.report as report_module
 
-
-REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 OWNED_WAVE2_SLICE_A_FILES = (
     'scripts/artifacts/GarminResponse.py',
     'scripts/artifacts/GarminJson.py',
