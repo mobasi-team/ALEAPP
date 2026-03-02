@@ -471,7 +471,7 @@ def get_WhatsApp(files_found, report_folder, seeker, _wrap_text):
                     data_headers = ('Version', 'Name', 'User Status', 'Country Code', 'Mobile Number')
                     data_list = []
                     data_list.append((data['version'], data['push_name'], data['my_current_status'], data['cc'], data['ph']))
-                    report.write_artifact_data_table(data_headers, data_list, ', '.join(file_source), html_escape=False)
+                    report.write_artifact_data_table(data_headers, data_list, ', '.join(file_source))
                     report.end_artifact_report()
 
                     tsvname = "WhatsApp - User Profile"

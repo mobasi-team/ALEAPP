@@ -209,21 +209,52 @@ def get_nike_polyline(files_found, report_folder, seeker, wrap_text):
                 with open(report_folder + '/' + str(row[0]) + '.kml', 'w') as f:
                     f.write(kml)
                     f.close()
+            map_link = (
+                f'<a href="#{activity_id}" class="btn btn-light btn-sm nike-polyline-map-link">'
+                'Show Map</a>'
+            )
             # Store the map in the report
             if use_network:
-                data_list.append((activity_id, start_time_utc, end_time_utc, duration, '<a href=Nike-Run/'+str(activity_id)+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', '<a href=Nike-Run/'+str(activity_id)+'.xlsx class="badge badge-light" target="_blank">'+str(row[0])+'.xlsx</a>', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(activity_id)+'\')">Show Map</button>'))
+                data_list.append(
+                    (
+                        activity_id,
+                        start_time_utc,
+                        end_time_utc,
+                        duration,
+                        '<a href=Nike-Run/' + str(activity_id) + '.kml class="badge badge-light" target="_blank">' + str(row[0]) + '.kml</a>',
+                        '<a href=Nike-Run/' + str(activity_id) + '.xlsx class="badge badge-light" target="_blank">' + str(row[0]) + '.xlsx</a>',
+                        map_link,
+                    )
+                )
             else:
-                data_list.append((activity_id, start_time_utc, end_time_utc, duration, '<a href=Nike-Run/'+str(activity_id)+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', 'N/A', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(activity_id)+'\')">Show Map</button>'))
+                data_list.append((activity_id, start_time_utc, end_time_utc, duration, '<a href=Nike-Run/'+str(activity_id)+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', 'N/A', map_link))
 
 
         # Added feature to allow the user to sort the data by the selected collumns and with the ID of the table
         table_id = 'Nike_Polyline'
         report.filter_by_date(table_id, 1)
 
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False, table_id='Nilke_Polyline')
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id='Nilke_Polyline',
+            html_no_escape=['Coordinates KML', 'Coordinates Excel', 'Button'],
+        )
 
         # Add the map to the report
         report.add_section_heading('Nike Polyline Map')
+        report.script_code += """
+<script>
+$(document).on('click', 'a.nike-polyline-map-link', function(event) {
+    event.preventDefault();
+    const target = (this.getAttribute('href') || '').replace(/^#/, '');
+    if (target) {
+        openMap(target);
+    }
+});
+</script>
+"""
         for htmlMap in html_map:
             report.add_map(htmlMap)
         report.end_artifact_report()

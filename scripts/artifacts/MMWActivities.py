@@ -15,6 +15,15 @@ from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv, timeline, open_sqlite_db_readonly, get_raw_fields, check_raw_fields, check_internet_connection
 
 
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
+
+
 def get_map_activities(files_found, report_folder, seeker, wrap_text):
     logfunc("Processing data for Map My Walk Activities")
     use_network = check_internet_connection()
@@ -48,7 +57,8 @@ def get_map_activities(files_found, report_folder, seeker, wrap_text):
         activity_date = ''
         activity_json = []
         html_map = []
-        for row in all_rows:
+        map_actions = {}
+        for row_index, row in enumerate(all_rows):
             id = row[0]
             coordinates = []
             coordinatesE = []
@@ -245,17 +255,47 @@ def get_map_activities(files_found, report_folder, seeker, wrap_text):
                 # Change the total of the last element of the list
                 activity_json[-1]['total'] += 1
 
+            kml_link = f'<a href="Map-My-Walk/{row[0]}.kml" class="badge badge-light" target="_blank">{row[0]}.kml</a>'
             if use_network:
-                data_list.append((row[0], startTime, endTime, distance, speed, time, '<a href=Map-My-Walk/'+str(row[0])+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', '<a href=Map-My-Walk/'+str(row[0])+'.xlsx class="badge badge-light" target="_blank">'+str(row[0])+'.xlsx</a>', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(id)+'\')">Show Map</button>'))
+                excel_link = f'<a href="Map-My-Walk/{row[0]}.xlsx" class="badge badge-light" target="_blank">{row[0]}.xlsx</a>'
             else:
-                data_list.append((row[0], startTime, endTime, distance, speed, time, '<a href=Map-My-Walk/'+str(row[0])+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', 'N/A', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(id)+'\')">Show Map</button>'))
+                excel_link = 'N/A'
+            action_id = f'map-walk-activity-{row_index}'
+            map_actions[action_id] = str(id)
+            map_link = f'<a class="btn btn-light btn-sm map-walk-show-map" href="#" id="{action_id}">Show Map</a>'
+            data_list.append((row[0], startTime, endTime, distance, speed, time, kml_link, excel_link, map_link))
 
 
         # Filter by date
         report.add_heat_map(json.dumps(activity_json))
         table_id = "MapWalkActivities"
         report.filter_by_date(table_id, 1)
-        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=table_id, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['Coordinates KML', 'Coordinates Excel', 'Button'],
+        )
+        map_actions_js = _to_safe_inline_json(map_actions)
+        report.script_code += f"""<script>
+            (function() {{
+                const actionMap = {map_actions_js};
+                document.addEventListener('click', function(event) {{
+                    const trigger = event.target.closest('a.map-walk-show-map');
+                    if (!trigger) {{
+                        return;
+                    }}
+                    event.preventDefault();
+                    const target = actionMap[trigger.id];
+                    if (typeof target === 'undefined') {{
+                        return;
+                    }}
+                    openMap(String(target));
+                }});
+            }})();
+            </script>
+        """
         # Add the map to the report
         report.add_section_heading('Map My Walk Polyline Map')
         for htmlMap in html_map:

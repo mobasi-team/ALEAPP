@@ -237,25 +237,44 @@ def get_gps(files_found, report_folder, seeker, wrap_text):
             with open(report_folder + '/' + str(act) + '.kml', 'w') as f:
                 f.write(kml)
                 f.close()
+        map_link = (
+            f'<a href="#{act}" class="btn btn-light btn-sm strava-map-link">'
+            'Show Map</a>'
+        )
         if use_network:
             data_list.append((sport, start_time, end_time, total_elapsed_time_m, total_distance, '<a href=Strava/' + str(
                 act) + '.kml class="badge badge-light" target="_blank">' + str(act) + '.kml</a>', '<a href=Strava/' + str(
                 act) + '.xlsx class="badge badge-light" target="_blank">' + str(act) + '.xlsx</a>',
-                              '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\'' + str(
-                                  act) + '\')">Show Map</button>'))
+                              map_link))
         else:
             data_list.append(
                 (sport, start_time, end_time, total_elapsed_time_m, total_distance, '<a href=Strava/' + str(
                     act) + '.kml class="badge badge-light" target="_blank">' + str(act) + '.kml</a>',
                  'N/A',
-                 '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\'' + str(
-                     act) + '\')">Show Map</button>'))
+                 map_link))
         act += 1
 
     report.filter_by_date('Strava', 1)
-    report.write_artifact_data_table(data_headers, data_list, file, html_escape=False, table_id='Strava')
+    report.write_artifact_data_table(
+        data_headers,
+        data_list,
+        file,
+        table_id='Strava',
+        html_no_escape=['Coordinates KML', 'Coordinates Excel', 'Button'],
+    )
     # Add the map to the report
     report.add_section_heading('Strava')
+    report.script_code += """
+<script>
+$(document).on('click', 'a.strava-map-link', function(event) {
+    event.preventDefault();
+    const target = (this.getAttribute('href') || '').replace(/^#/, '');
+    if (target) {
+        openMap(target);
+    }
+});
+</script>
+"""
     for htmlMap in html_map:
         report.add_map(htmlMap)
     report.end_artifact_report()

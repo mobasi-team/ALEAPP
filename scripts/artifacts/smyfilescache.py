@@ -45,7 +45,12 @@ def get_smyfilescache(files_found, report_folder, seeker, text_wrap):
         report.start_artifact_report(report_folder, 'My Files DB - Cache Media')
         report.add_script()
         data_headers = ('Timestamp Modified','Media','Media Cache ID','Path','Size','Latest' ) # Don't remove the comma, that is required to make this a tuple as there is only 1 element
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            html_no_escape=['Media'],
+        )
         report.end_artifact_report()
         
         tsvname = f'My Files DB - Cache Media'
@@ -84,7 +89,12 @@ def get_smyfilescache(files_found, report_folder, seeker, text_wrap):
         report.start_artifact_report(report_folder, 'My Files DB - Cache Media')
         report.add_script()
         data_headers = ('Timestamp Modified','Media','Media Cache ID','Path','Size','Latest' ) # Don't remove the comma, that is required to make this a tuple as there is only 1 element
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            html_no_escape=['Media'],
+        )
         report.end_artifact_report()
         
         tsvname = f'My Files DB - Cache Media'

@@ -42,7 +42,7 @@ def get_teams(files_found, report_folder, seeker, wrap_text):
                 if timetwo == '1970-01-01 00:00:00':
                     timetwo = ''
                 data_list.append((timeone, row[1], row[2], row[3], timetwo, row[5], row[6]))
-            report.write_artifact_data_table(data_headers, data_list, file_found) #, html_escape=False
+            report.write_artifact_data_table(data_headers, data_list, file_found)
             report.end_artifact_report()
             
             tsvname = 'Teams Messages'
@@ -83,7 +83,7 @@ def get_teams(files_found, report_folder, seeker, wrap_text):
             data_list=[]
             for row in all_rows:
                 data_list.append((row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13]))
-            report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+            report.write_artifact_data_table(data_headers, data_list, file_found)
             report.end_artifact_report()
             
             tsvname = 'Teams Users'
@@ -123,7 +123,7 @@ def get_teams(files_found, report_folder, seeker, wrap_text):
                 if timetwo == '1970-01-01 00:00:00':
                     timetwo = ''
                 data_list.append((timeone, timetwo, row[2], row[3], row[4], row[5], row[6], row[7]))
-            report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+            report.write_artifact_data_table(data_headers, data_list, file_found)
             report.end_artifact_report()
             
             tsvname = 'Teams Call Log'
@@ -153,7 +153,7 @@ def get_teams(files_found, report_folder, seeker, wrap_text):
             data_list=[]
             for row in all_rows:
                 data_list.append((row[0], row[1], row[2], row[3], row[4], row[5]))
-            report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+            report.write_artifact_data_table(data_headers, data_list, file_found)
             report.end_artifact_report()
             
             tsvname = 'Teams Activity Feed'
@@ -186,7 +186,7 @@ def get_teams(files_found, report_folder, seeker, wrap_text):
             for row in all_rows:
                 mtime = row[0].replace('T', ' ')
                 data_list.append((mtime, row[1], row[2], row[3], row[4], row[5]))
-            report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+            report.write_artifact_data_table(data_headers, data_list, file_found)
             report.end_artifact_report()
             
             tsvname = 'Teams File Info'

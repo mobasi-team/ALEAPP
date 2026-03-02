@@ -2,7 +2,15 @@ import sqlite3
 import os
 
 from scripts.artifact_report import ArtifactHtmlReport
-from scripts.ilapfuncs import timeline, tsv, is_platform_windows, open_sqlite_db_readonly
+from scripts.html_security import escape_attr, escape_text, sanitize_url
+from scripts.ilapfuncs import timeline, tsv, logfunc, is_platform_windows, open_sqlite_db_readonly
+
+
+def _safe_anchor_html(url, label=None):
+    safe_href = escape_attr(sanitize_url(url))
+    text = label if label is not None else url
+    safe_label = escape_text(text)
+    return f'<a href="{safe_href}" target="_blank" rel="noopener noreferrer">{safe_label}</a>'
 
 
 def get_pikpakCloudlist(files_found, report_folder, seeker, wrap_text):
@@ -35,7 +43,7 @@ def get_pikpakCloudlist(files_found, report_folder, seeker, wrap_text):
     
     if usageentries > 0:
         for row in all_rows:
-            link = f'<a href="{row[8]}" target="_blank">{row[8]}</a>'
+            link = _safe_anchor_html(row[8])
             data_list.append((row[0],row[1],row[2],row[3],row[4],row[5],row[6],row[7],link))
 
         description = 'PikPak Cloud List links are clickable!!!!! If connected to the internet and pressed the browser will try to open them in a new tab.'

@@ -106,7 +106,12 @@ def get_sharedProto(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Timestamp','Timestamp B','Record Key','Record Sequence','ULR One','URL Two','Domain','Data','Origin')
         
-        report.write_artifact_data_table(data_headers, data_list, maindirectory,html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            maindirectory,
+            html_no_escape=['ULR One'],
+        )
         report.end_artifact_report()
         
         tsvname = f'Samsung Browser Shared Proto'

@@ -36,7 +36,7 @@ def get_vlcthumbsADB(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'VLC Thumbnails', description)
         report.add_script()
         data_headers = ('Modified Timestamp','Thumbnail','Filename','Location' )
-        report.write_artifact_data_table(data_headers, data_list_t, filepath, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list_t, filepath, html_no_escape=['Thumbnail'])
         report.end_artifact_report()
         
         tsvname = 'VLC Thumbnails'
@@ -53,7 +53,7 @@ def get_vlcthumbsADB(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'VLC Media Lib', description)
         report.add_script()
         data_headers = ('Modified Timestamp','Thumbnail','Filename','Location')
-        report.write_artifact_data_table(data_headers, data_list_m, filepath, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list_m, filepath, html_no_escape=['Thumbnail'])
         report.end_artifact_report()
         
         tsvname = 'VLC Media Lib'

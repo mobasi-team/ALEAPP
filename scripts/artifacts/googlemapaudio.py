@@ -58,7 +58,7 @@ def get_googlemapaudio(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Google Maps Voice Guidance')
         report.add_script()
 
-        report.write_artifact_data_table(data_headers, audio_info, source_dir, html_escape=False)
+        report.write_artifact_data_table(data_headers, audio_info, source_dir, html_no_escape=['Audio'])
         report.end_artifact_report()
             
         tsvname = f'Google Map Audio'

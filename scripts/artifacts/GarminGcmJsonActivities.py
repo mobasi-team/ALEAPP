@@ -9,6 +9,15 @@ from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv, timeline, open_sqlite_db_readonly
 
 
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
+
+
 def get_garmin_gcm_json_activities(files_found, report_folder, seeker, wrap_text):
     logfunc("Processing data for Garmin Response")
     files_found = [x for x in files_found if not x.endswith('wal') and not x.endswith('shm') and not x.endswith('journal')]
@@ -36,8 +45,9 @@ def get_garmin_gcm_json_activities(files_found, report_folder, seeker, wrap_text
         report.add_script()
         data_headers = ('_id', 'saved_timestamp', 'concept_id', 'data_type', 'json')
         data_list = []
+        json_actions = {}
 
-        for row in all_rows:
+        for index, row in enumerate(all_rows):
             # ignore row that is [] (empty list)
             if row[5] != '[]':
                 jsonData = row[5]
@@ -47,15 +57,29 @@ def get_garmin_gcm_json_activities(files_found, report_folder, seeker, wrap_text
                 jsonData = jsonData.replace('}"', '}')
                 jsonData = json.loads(jsonData)
                 jsonData = json.dumps(jsonData, indent=4, sort_keys=True)
-                # replace " with &quot; to avoid breaking the html
-                jsonData = jsonData.replace('"', '&quot;')
-                data_list.append((row[0], row[1], row[3], row[4], '<button class="btn btn-light btn-sm" onclick="changeJSONHidden(this)" value="'+jsonData+'">View</button>'))
+                action_id = f'garmin-gcm-json-action-{index}'
+                json_actions[action_id] = jsonData
+                data_list.append(
+                    (
+                        row[0],
+                        row[1],
+                        row[3],
+                        row[4],
+                        f'<a class="btn btn-light btn-sm garmin-gcm-json-view" href="#" id="{action_id}">View</a>',
+                    )
+                )
             else:
                 data_list.append((row[0], row[1], row[3], row[4], ''))
 
         table_id = "garmin_gcm_json_activities"
         report.filter_by_date(table_id, 1)
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False, table_id=table_id)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['json'],
+        )
 
         # Insert pretty JSON into the report
         i = 0
@@ -72,6 +96,30 @@ def get_garmin_gcm_json_activities(files_found, report_folder, seeker, wrap_text
                 if i == 0:
                     report.add_json_to_artifact("Response", jsonData, False, row[0], True)
                 i += 1
+        json_actions_js = _to_safe_inline_json(json_actions)
+        report.script_code += f"""<script>
+           (function() {{
+               const actionMap = {json_actions_js};
+               document.addEventListener('click', function(event) {{
+                   const trigger = event.target.closest('a.garmin-gcm-json-view');
+                   if (!trigger) {{
+                       return;
+                   }}
+                   event.preventDefault();
+                   const payload = actionMap[trigger.id];
+                   if (typeof payload !== 'string') {{
+                       return;
+                   }}
+                   const code = document.getElementById('jsonCode');
+                   if (!code) {{
+                       return;
+                   }}
+                   code.textContent = payload;
+                   hljs.highlightAll();
+               }});
+           }})();
+           </script>
+           """
 
         report.end_artifact_report()
 

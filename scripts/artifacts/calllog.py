@@ -58,17 +58,9 @@ def get_calllog(files_found, report_folder, seeker, wrap_text):
             usageentries = len(all_rows)
             if usageentries > 0:
                 for row in all_rows:
-                    # Setup icons for call type
+                    # Keep display text plain to avoid unsafe inline markup in the table.
                     call_type = row[3]
-                    if   call_type == 'Incoming':  call_type_html = call_type + ' <i data-feather="phone-incoming" stroke="green"></i>'
-                    elif call_type == 'Outgoing':  call_type_html = call_type + ' <i data-feather="phone-outgoing" stroke="green"></i>'
-                    elif call_type == 'Missed':    call_type_html = call_type + ' <i data-feather="phone-missed" stroke="red"></i>'
-                    elif call_type == 'Voicemail': call_type_html = call_type + ' <i data-feather="voicemail" stroke="brown"></i>'
-                    elif call_type == 'Rejected':  call_type_html = call_type + ' <i data-feather="x" stroke="red"></i>'
-                    elif call_type == 'Blocked':   call_type_html = call_type + ' <i data-feather="phone-off" stroke="red"></i>'
-                    elif call_type == 'Answered Externally': call_type_html = call_type + ' <i data-feather="phone-forwarded"></i>'
-                    else:
-                        call_type_html = call_type
+                    call_type_html = call_type
 
                     data_list.append((row[0], row[1], row[2], call_type_html, str(row[4]), row[5], row[6], row[7], row[8], row[9], str(row[10]), file_found))
             db.close()
@@ -79,7 +71,7 @@ def get_calllog(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Call Date', 'Phone Account Address', 'Partner', 'Type','Duration in Secs','Partner Location','Country ISO','Data','Mime Type','Transcription','Deleted','Source File')
         
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, file_found)
         report.end_artifact_report()
         
         tsvname = f'Call Logs'

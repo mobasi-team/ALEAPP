@@ -10,6 +10,15 @@ from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv
 
 
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
+
+
 def get_steps_api(files_found, report_folder, seeker, wrap_text):
 
     logfunc("Processing data for Steps API")
@@ -18,6 +27,7 @@ def get_steps_api(files_found, report_folder, seeker, wrap_text):
     report.add_script()
     data_headers = ('Date', 'Steps', 'Calories', 'Distance', 'Floors Asc', 'Floors Desc', 'Graphic')
     data_list = []
+    chart_actions = {}
     #file = str(files_found[0])
     for file in files_found:
         file = str(file)
@@ -75,12 +85,49 @@ def get_steps_api(files_found, report_folder, seeker, wrap_text):
                             y_list.append(float(mv_values[i]))
                 #logfunc(str(x_list))
                 #logfunc(str(y_list))
-                mv_btn = '<button class="btn btn-light btn-sm" onclick="createLineChart(\'' + str(y_list) + '\', \'' + str(x_list) + '\', true, \'Daily Movement\', \'Time\', \'Movement\')">View</button>'
+                action_id = f'garmin-steps-chart-action-{len(chart_actions)}'
+                chart_actions[action_id] = {'x': x_list, 'y': y_list}
+                mv_btn = (
+                    f'<a class="btn btn-light btn-sm garmin-steps-chart-view" href="#" id="{action_id}">'
+                    'View</a>'
+                )
             else:
                 mv_btn = 'N/A'
             data_list.append((date, steps, cal, distance, floors_asc, floors_desc, mv_btn))
     report.filter_by_date('GarminStepsAPI', 0)
-    report.write_artifact_data_table(data_headers, data_list, file, html_escape=False, table_id='GarminStepsAPI')
+    report.write_artifact_data_table(
+        data_headers,
+        data_list,
+        file,
+        table_id='GarminStepsAPI',
+        html_no_escape=['Graphic'],
+    )
+    chart_actions_js = _to_safe_inline_json(chart_actions)
+    report.script_code += f"""<script>
+       (function() {{
+           const chartActions = {chart_actions_js};
+           document.addEventListener('click', function(event) {{
+               const trigger = event.target.closest('a.garmin-steps-chart-view');
+               if (!trigger) {{
+                   return;
+               }}
+               event.preventDefault();
+               const payload = chartActions[trigger.id];
+               if (!payload) {{
+                   return;
+               }}
+               createLineChart(
+                   JSON.stringify(payload.y || []),
+                   JSON.stringify(payload.x || []),
+                   true,
+                   'Daily Movement',
+                   'Time',
+                   'Movement'
+               );
+           }});
+       }})();
+       </script>
+       """
     report.add_chart()
     report.end_artifact_report()
     tsvname = f'Garmin Log'

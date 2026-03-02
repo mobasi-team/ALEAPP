@@ -1,8 +1,50 @@
 import html
+import json as jsonlib
 import os
 import sys
 from scripts.html_parts import *
+from scripts.html_security import (
+    DEFAULT_ALLOWED_TAGS,
+    TrustedHtml,
+    escape_attr,
+    escape_text,
+    sanitize_html_fragment,
+    sanitize_url,
+)
 from scripts.version_info import aleapp_version
+
+
+def _normalize_cell_value(value):
+    return '' if value in [None, 'N/A'] else str(value)
+
+
+def _escape_inline_script_literal(literal):
+    # Prevent </script> and HTML parser breakouts in inline script blocks.
+    return (
+        literal.replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+        .replace('\u2028', '\\u2028')
+        .replace('\u2029', '\\u2029')
+    )
+
+
+def _to_js_literal(value):
+    if isinstance(value, (dict, list, int, float, bool)) or value is None:
+        return _escape_inline_script_literal(jsonlib.dumps(value))
+    if isinstance(value, str):
+        stripped = value.strip()
+        if not stripped:
+            return '""'
+        try:
+            parsed = jsonlib.loads(stripped)
+            return _escape_inline_script_literal(jsonlib.dumps(parsed))
+        except (TypeError, ValueError):
+            return _escape_inline_script_literal(jsonlib.dumps(value))
+    return _escape_inline_script_literal(jsonlib.dumps(str(value)))
+
+
+_MAP_ALLOWED_TAGS = set(DEFAULT_ALLOWED_TAGS) | {'iframe'}
 
 class ArtifactHtmlReport:
 
@@ -103,16 +145,21 @@ class ArtifactHtmlReport:
         if html_escape:
             for row in data_list:
                 if html_no_escape:
-                    self.report_file.write('<tr>' + ''.join(('<td>{}</td>'.format(html.escape(
-                        str(x) if x not in [None, 'N/A'] else '')) if h not in html_no_escape else '<td>{}</td>'.format(
-                        str(x) if x not in [None, 'N/A'] else '') for x, h in zip(row, data_headers))) + '</tr>')
+                    self.report_file.write('<tr>' + ''.join((
+                        '<td>{}</td>'.format(escape_text(_normalize_cell_value(x)))
+                        if h not in html_no_escape
+                        else '<td>{}</td>'.format(sanitize_html_fragment(_normalize_cell_value(x)))
+                        for x, h in zip(row, data_headers)
+                    )) + '</tr>')
                 else:
                     self.report_file.write('<tr>' + ''.join(
-                        ('<td>{}</td>'.format(html.escape(str(x) if x not in [None, 'N/A'] else '')) for x in
+                        ('<td>{}</td>'.format(escape_text(_normalize_cell_value(x))) for x in
                          row)) + '</tr>')
         else:
             for row in data_list:
-                self.report_file.write('<tr>' + ''.join( ('<td>{}</td>'.format(str(x) if x not in [None, 'N/A'] else '') for x in row) ) + '</tr>')
+                self.report_file.write('<tr>' + ''.join(
+                    ('<td>{}</td>'.format(sanitize_html_fragment(_normalize_cell_value(x))) for x in row)
+                ) + '</tr>')
         
         self.report_file.write('</tbody>')
         if cols_repeated_at_bottom:
@@ -137,10 +184,12 @@ class ArtifactHtmlReport:
             self.report_file.write(f'<h3 class="h3">{heading}</h3>')
 
     def write_lead_text(self, text):
-        self.report_file.write(f'<p class="lead">{text}</p>')
+        self.report_file.write(f'<p class="lead">{escape_text(text)}</p>')
 
     def write_raw_html(self, code):
-        self.report_file.write(code)
+        if not isinstance(code, TrustedHtml):
+            raise TypeError('write_raw_html only accepts TrustedHtml instances')
+        self.report_file.write(str(code))
 
     def end_artifact_report(self):
         if self.report_file:
@@ -150,21 +199,25 @@ class ArtifactHtmlReport:
 
     # Add image to artifact
     def add_image_file(self, param, param1, param2, secondImage=False):
+        safe_src = escape_attr(sanitize_url(param, allow_data_media=True))
+        safe_alt = escape_attr(param1)
+        safe_title_attr = escape_attr(param2)
+        safe_title_text = escape_text(param2)
         # break line
         self.report_file.write('<br/><hr>')
         # Heading
-        self.report_file.write(f'<h3 class="h3 text-center mb-3">{param2}</h3>')
+        self.report_file.write(f'<h3 class="h3 text-center mb-3">{safe_title_text}</h3>')
         # Image centered
         if secondImage:
             self.report_file.write(
-                f'<img src="{param}" alt="{param1}" title="{param2}" class="img-fluid mx-auto d-block"/>')
+                f'<img src="{safe_src}" alt="{safe_alt}" title="{safe_title_attr}" class="img-fluid mx-auto d-block"/>')
         else:
             self.report_file.write(
-                f'<img src="{param}" alt="{param1}" title="{param2}" id="chartImage" class="img-fluid mx-auto d-block"/>')
+                f'<img src="{safe_src}" alt="{safe_alt}" title="{safe_title_attr}" id="chartImage" class="img-fluid mx-auto d-block"/>')
 
     # Add Map Element to artifact
     def add_map(self, param):
-        self.report_file.write(f'{param}')
+        self.report_file.write(sanitize_html_fragment(param, allowed_tags=_MAP_ALLOWED_TAGS))
 
     # Add Chart Element to artifact
     def add_chart(self, height=400):
@@ -179,18 +232,21 @@ class ArtifactHtmlReport:
 
     # Add JSON Element to artifact
     def add_json_to_artifact(self, param, param1, hidden=True, idJ='', gcm=False):
+        safe_id = escape_attr(idJ)
+        safe_heading = escape_text(param)
+        safe_json = escape_text(param1)
         # Div
         if not gcm:
             if hidden:
-                self.report_file.write(f'<div id="{idJ}" class="jsonBlock" style="display:none">')
+                self.report_file.write(f'<div id="{safe_id}" class="jsonBlock" style="display:none">')
             else:
-                self.report_file.write(f'<div id="{idJ}" class="jsonBlock">')
+                self.report_file.write(f'<div id="{safe_id}" class="jsonBlock">')
             # break line
             self.report_file.write('<br/><hr>')
             # Heading
-            self.report_file.write(f'<h3 class="h3 text-center mb-3">{param}</h3>')
+            self.report_file.write(f'<h3 class="h3 text-center mb-3">{safe_heading}</h3>')
             # Image centered
-            self.report_file.write(f'<pre><code>{param1}</code></pre>')
+            self.report_file.write(f'<pre><code>{safe_json}</code></pre>')
             # Div
             self.report_file.write('</div>')
         else:
@@ -198,9 +254,9 @@ class ArtifactHtmlReport:
             # break line
             self.report_file.write('<br/><hr>')
             # Heading
-            self.report_file.write(f'<h3 class="h3 text-center mb-3">{param}</h3>')
+            self.report_file.write(f'<h3 class="h3 text-center mb-3">{safe_heading}</h3>')
             # Image centered
-            self.report_file.write(f'<pre><code id="jsonCode">{param1}</code></pre>')
+            self.report_file.write(f'<pre><code id="jsonCode">{safe_json}</code></pre>')
             # Div
             self.report_file.write('</div>')
             self.report_file.write('<script>hljs.highlightAll();</script>')
@@ -272,13 +328,14 @@ class ArtifactHtmlReport:
 
     # Function to add a heatmap to the artifact
     def add_heat_map(self, json):
+        safe_json = _to_js_literal(json)
         # year input
         self.report_file.write('<div class="row">')
         self.report_file.write('<div class="col-md-2">')
         self.report_file.write('<div class="form-group">')
         self.report_file.write('<label for="year">Year</label>')
         self.report_file.write(
-            '<input type="number" class="form-control" id="year" value="2022" onchange="changeYear(this)">')
+            '<input type="number" class="form-control" id="year" value="2022">')
         self.report_file.write('</div>')
         self.report_file.write('</div>')
         self.report_file.write('</div>')
@@ -287,37 +344,59 @@ class ArtifactHtmlReport:
         self.report_file.write(f'<h3 class="h3 text-center mb-3">Nº Activities</h3>')
         # Image centered
         self.report_file.write(f'<div id="heatmap" class="overflow-auto d-flex justify-content-center"></div><br>')
-        self.report_file.write(
-            f'<a class="btn btn-sm btn-secondary ml-xs" href="#" onclick="previous()">← Previous</a>')
-        self.report_file.write(
-            f'<a class="btn btn-sm btn-secondary ml-xs" href="#" onclick="next()">Next →</a>')
+        self.report_file.write('<a class="btn btn-sm btn-secondary ml-xs heatmap-previous" href="#">← Previous</a>')
+        self.report_file.write('<a class="btn btn-sm btn-secondary ml-xs heatmap-next" href="#">Next →</a>')
         self.report_file.write('<br/><hr>')
         # heatmap function
         self.script_code += f"""<script>
            $(document).ready(function() {{
-           heatMap({json});
+           heatMap({safe_json});
+           }});
+           $(document).on('change', '#year', function() {{
+               changeYear(this);
+           }});
+           $(document).on('click', 'a.heatmap-previous', function(event) {{
+               event.preventDefault();
+               previous();
+           }});
+           $(document).on('click', 'a.heatmap-next', function(event) {{
+               event.preventDefault();
+               next();
            }});
            </script>
            """
 
     # Function to add a chart to the artifact using a script call
     def add_chart_script(self, id, type, data, labels, title, xLabel, yLabel):
+        safe_id = _to_js_literal(str(id) if id is not None else '')
+        safe_type = _to_js_literal(str(type) if type is not None else '')
+        safe_data = _to_js_literal(data)
+        safe_labels = _to_js_literal(labels)
+        safe_title = _to_js_literal(str(title) if title is not None else '')
+        safe_x_label = _to_js_literal(str(xLabel) if xLabel is not None else '')
+        safe_y_label = _to_js_literal(str(yLabel) if yLabel is not None else '')
         self.script_code += f"""<script>
-           createChart('{id}', '{type}', {data}, {labels}, '{title}', '{xLabel}', '{yLabel}');
+           createChart({safe_id}, {safe_type}, {safe_data}, {safe_labels}, {safe_title}, {safe_x_label}, {safe_y_label});
            </script>
            """
 
     #Fucntion to add a timeline to the artifact
     def add_timeline(self, id, dataDict):
-        self.report_file.write(f'<div class="timeline" data-vertical-start-position="right" data-vertical-trigger="150px" id="{id}" hidden>')
+        safe_id = escape_attr(id)
+        self.report_file.write(
+            f'<div class="timeline" data-vertical-start-position="right" data-vertical-trigger="150px" id="{safe_id}" hidden>'
+        )
         self.report_file.write('<div class="timeline__wrap">')
         self.report_file.write('<div class="timeline__items">')
         for data in dataDict:
+            safe_time = escape_text(data.get("time", ""))
+            safe_type = ''.join(ch for ch in str(data.get("type", "")) if ch.isalnum() or ch in '-_ ')
+            safe_text = sanitize_html_fragment(data.get("text", ""))
             self.report_file.write('<div class="timeline__item">')
             self.report_file.write('<div class="timeline__content">')
             self.report_file.write(
-                f'<h2>{data["time"]} <i class="{data["type"]}" style="padding-left: 10px"></i></h2>')
-            self.report_file.write(f'<p>{data["text"]}</p>')
+                f'<h2>{safe_time} <i class="{escape_attr(safe_type)}" style="padding-left: 10px"></i></h2>')
+            self.report_file.write(f'<p>{safe_text}</p>')
             self.report_file.write('</div>')
             self.report_file.write('</div>')
         self.report_file.write('</div>')
@@ -351,12 +430,14 @@ class ArtifactHtmlReport:
 
     # Function to add a empty element with the data to be added later (roundabout way to add data to the chat)
     def add_chat_invisble(self, id, text):
-        self.report_file.write(f'<div id="{id}" hidden>{text}</div>')
+        self.report_file.write(f'<div id="{escape_attr(id)}" hidden>{escape_text(text)}</div>')
 
     def add_chat_window(self, head, body):
+        safe_head = sanitize_html_fragment(head)
+        safe_body = sanitize_html_fragment(body)
         self.report_file.write('<div id="chatmaster">')
         self.report_file.write('<div class="chathead">')
-        self.report_file.write(f'{head}')
+        self.report_file.write(f'{safe_head}')
         self.report_file.write('</div>')
-        self.report_file.write(f'{body}')
+        self.report_file.write(f'{safe_body}')
         self.report_file.write('</div>')

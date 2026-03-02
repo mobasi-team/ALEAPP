@@ -19,7 +19,16 @@ import struct
 from datetime import *
 import blackboxprotobuf
 from scripts.artifact_report import ArtifactHtmlReport
+from scripts.html_security import escape_attr, escape_text, sanitize_url
 from scripts.ilapfuncs import logfunc, tsv, timeline, kmlgen, is_platform_windows, open_sqlite_db_readonly, convert_utc_human_to_timezone
+
+
+def _safe_anchor_html(url, label=None):
+    safe_href = escape_attr(sanitize_url(url))
+    text = label if label is not None else url
+    safe_label = escape_text(text)
+    return f'<a href="{safe_href}" style="color:blue" target="_blank" rel="noopener noreferrer">{safe_label}</a>'
+
 
 def get_googleMapsGmm(files_found, report_folder, seeker, wrap_text):
     
@@ -77,7 +86,7 @@ def get_googleMapsGmm(files_found, report_folder, seeker, wrap_text):
                         directions = directions[:-1]
                     
                     directions = ("https://google.com/maps"+directions)
-                    directions = f'<a href="{directions}" style = "color:blue" target="_blank">{directions}</a>'
+                    directions = _safe_anchor_html(directions)
                     data_list_storage.append((directions, fromlat, fromlon, tolat, tolon, id, keypri))
             db.close()
 
@@ -115,7 +124,7 @@ def get_googleMapsGmm(files_found, report_folder, seeker, wrap_text):
 
                 address = pb[0].get('6', {}).get('2', b'').decode('utf-8')
                 url = pb[0].get('6', {}).get('6', b'').decode('utf-8')
-                url = f'<a href="{url}" style = "color:blue" target="_blank">{url}</a>'
+                url = _safe_anchor_html(url)
                 timestamp = datetime.fromtimestamp(timestamp/1000, tz=timezone.utc)
                 timestamp = convert_utc_human_to_timezone(timestamp, 'UTC')
                 data_list_myplaces.append((timestamp,label,latitude,longitude,address,url))
@@ -128,7 +137,12 @@ def get_googleMapsGmm(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Google Search History Maps')
         report.add_script()
         data_headers = ('Directions', 'Latitude', 'Longitude', 'To Latitude', 'To Longitude', 'Row ID', 'Type')
-        report.write_artifact_data_table(data_headers, data_list_storage, file_found_storage, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list_storage,
+            file_found_storage,
+            html_no_escape=['Directions'],
+        )
         report.end_artifact_report()
 
         tsvname = f'Google Search History Maps'
@@ -141,7 +155,12 @@ def get_googleMapsGmm(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Google Maps Label Places')
         report.add_script()
         data_headers = ('Timestamp','Label', 'Latitude', 'Longitude', 'Address', 'URL')
-        report.write_artifact_data_table(data_headers, data_list_myplaces, file_found_myplaces, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list_myplaces,
+            file_found_myplaces,
+            html_no_escape=['URL'],
+        )
         report.end_artifact_report()
        
         tsvname = f'Google Maps Label Places'

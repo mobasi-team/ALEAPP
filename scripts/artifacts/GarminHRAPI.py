@@ -10,6 +10,15 @@ from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv
 
 
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
+
+
 def get_hr_api(files_found, report_folder, seeker, wrap_text):
 
     logfunc("Processing data for Heart Rate API")
@@ -18,6 +27,7 @@ def get_hr_api(files_found, report_folder, seeker, wrap_text):
     report.add_script()
     data_headers = ('Date', 'Max Hearth Rate', 'Min Hearth Rate', 'Resting Hearth Rate', 'Average Hearth Rate', 'Graphic')
     data_list = []
+    chart_actions = {}
     #file = str(files_found[0])
     for file in files_found:
         file = str(file)
@@ -72,12 +82,49 @@ def get_hr_api(files_found, report_folder, seeker, wrap_text):
                 #convert timestamp to hh:mm
                 #logfunc(str(x_list))
                 #logfunc(str(y_list))
-                hr_btn = '<button class="btn btn-light btn-sm" onclick="createLineChart(\'' + str(y_list) + '\', \'' + str(x_list) + '\', true, \'Heart Rate Variation\', \'Time\', \'BPM\')">View</button>'
+                action_id = f'garmin-hr-chart-action-{len(chart_actions)}'
+                chart_actions[action_id] = {'x': x_list, 'y': y_list}
+                hr_btn = (
+                    f'<a class="btn btn-light btn-sm garmin-hr-chart-view" href="#" id="{action_id}">'
+                    'View</a>'
+                )
             else:
                 hr_btn = 'N/A'
             data_list.append((date, max_hr, min_hr, resting_hr, average_hr, hr_btn))
     report.filter_by_date('GarminHRAPI', 0)
-    report.write_artifact_data_table(data_headers, data_list, file, html_escape=False, table_id='GarminHRAPI')
+    report.write_artifact_data_table(
+        data_headers,
+        data_list,
+        file,
+        table_id='GarminHRAPI',
+        html_no_escape=['Graphic'],
+    )
+    chart_actions_js = _to_safe_inline_json(chart_actions)
+    report.script_code += f"""<script>
+       (function() {{
+           const chartActions = {chart_actions_js};
+           document.addEventListener('click', function(event) {{
+               const trigger = event.target.closest('a.garmin-hr-chart-view');
+               if (!trigger) {{
+                   return;
+               }}
+               event.preventDefault();
+               const payload = chartActions[trigger.id];
+               if (!payload) {{
+                   return;
+               }}
+               createLineChart(
+                   JSON.stringify(payload.y || []),
+                   JSON.stringify(payload.x || []),
+                   true,
+                   'Heart Rate Variation',
+                   'Time',
+                   'BPM'
+               );
+           }});
+       }})();
+       </script>
+       """
     report.add_chart()
     report.end_artifact_report()
     tsvname = f'Garmin Log'

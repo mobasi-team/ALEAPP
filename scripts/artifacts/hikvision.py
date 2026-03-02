@@ -184,7 +184,12 @@ def get_hikvision(files_found, report_folder, seeker, wrap_text):
                                 thumb = row[5]
                             data_list.append((row[0],row[1],row[2],row[3],media,thumb,row[6],row[7],row[8],row[9]))
 
-                        report.write_artifact_data_table(data_headers, data_list, file_found,html_escape = False)
+                        report.write_artifact_data_table(
+                            data_headers,
+                            data_list,
+                            file_found,
+                            html_no_escape=['File Path', 'Thumbnail Path'],
+                        )
                         report.end_artifact_report()
                         
                         tsvname = f'Hikvision - User Created Media'

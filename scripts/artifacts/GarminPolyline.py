@@ -218,6 +218,10 @@ def get_garmin_polyline(files_found, report_folder, seeker, wrap_text):
                 with open(report_folder + '/' + str(row[0]) + '.kml', 'w') as f:
                     f.write(kml)
                     f.close()
+            map_link = (
+                f'<a href="#{activity_id}" class="btn btn-light btn-sm garmin-polyline-map-link">'
+                'Show Map</a>'
+            )
             if use_network:
                 # Store the map in the report
                 data_list.append((row[0], row[3], row[1], row[2], row[4], row[5], row[6], row[7],
@@ -228,8 +232,7 @@ def get_garmin_polyline(files_found, report_folder, seeker, wrap_text):
                                       row[0]) + '.xlsx class="badge badge-light" target="_blank">' + str(
                                       row[0]) + '.xlsx</a>',
                                   row[10], row[11], row[12], row[13],
-                                  '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\'' + str(
-                                      activity_id) + '\')">Show Map</button>'))
+                                  map_link))
             else:
                 # Store the map in the report
                 data_list.append((row[0], row[3], row[1], row[2], row[4], row[5], row[6], row[7],
@@ -238,17 +241,33 @@ def get_garmin_polyline(files_found, report_folder, seeker, wrap_text):
                                       row[0]) + '.kml</a>',
                                   'N/A',
                                   row[10], row[11], row[12], row[13],
-                                  '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\'' + str(
-                                      activity_id) + '\')">Show Map</button>'))
+                                  map_link))
 
         # Added feature to allow the user to sort the data by the selected collumns and with the ID of the table
         table_id = 'Garmin_Polyline'
         report.filter_by_date(table_id, 1)
 
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False, table_id='GarminCache')
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id='GarminCache',
+            html_no_escape=['Coordinates KML', 'Coordinates Excel', 'Button'],
+        )
 
         # Add the map to the report
         report.add_section_heading('Garmin Polyline Map')
+        report.script_code += """
+<script>
+$(document).on('click', 'a.garmin-polyline-map-link', function(event) {
+    event.preventDefault();
+    const target = (this.getAttribute('href') || '').replace(/^#/, '');
+    if (target) {
+        openMap(target);
+    }
+});
+</script>
+"""
         for htmlMap in html_map:
             report.add_map(htmlMap)
         report.end_artifact_report()

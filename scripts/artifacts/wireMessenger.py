@@ -153,7 +153,12 @@ def get_wire_profile(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('User ID','Display Name','Email Address','Phone Number','Verification Status',
                         'Verification Device','Device Model','Date Registered','Profile Picture Name', 'Profile Picture')
-        report.write_artifact_data_table(data_headers, profile_data, user_database, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            profile_data,
+            user_database,
+            html_no_escape=['Profile Picture'],
+        )
         report.end_artifact_report()
         
         tsvname = 'Wire User Profile'
@@ -211,7 +216,7 @@ def get_wire_contacts(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Wire User Contacts', description)
         report.add_script()
         data_headers = ('User ID', 'Display Name', 'Handle ID', 'Connection Status', 'Connection Time', 'Profile Picture ID')
-        report.write_artifact_data_table(data_headers, contacts_data, user_database, html_escape=False)
+        report.write_artifact_data_table(data_headers, contacts_data, user_database)
         report.end_artifact_report()
         
         tsvname = 'Wire User Contacts'
@@ -331,7 +336,7 @@ def get_wire_messages(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Date / Time Sent', 'Message ID', 'User Name', 'Message Type', 'Message Content', 'Reaction', 'Date / Time Reacted',
                         'Reacted By','Call Duration','Asset ID - Check Path: /data/media/0/Pictures/Wire Images/')
-        report.write_artifact_data_table(data_headers, messages_data, user_database, html_escape=False)
+        report.write_artifact_data_table(data_headers, messages_data, user_database)
         report.end_artifact_report()
         
         tsvname = 'Wire User Contacts'

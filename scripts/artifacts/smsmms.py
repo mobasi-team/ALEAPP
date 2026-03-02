@@ -1,9 +1,10 @@
 import os
 import shutil
 import sqlite3
+from urllib.parse import quote
 
-from html import escape
 from scripts.artifact_report import ArtifactHtmlReport
+from scripts.html_security import escape_attr, escape_text, sanitize_url
 from scripts.ilapfuncs import logfunc, tsv, timeline, is_platform_windows, open_sqlite_db_readonly, does_table_exist_in_db, does_column_exist_in_db
 
 # Reference for flag values for mms:
@@ -68,6 +69,38 @@ lgElectronicsExtendedTypes =\
 
 def GetSmsQueryForTable(tableName, extendedTypes = ''):
     return sms_query.format(smsTableName = tableName, extendedType = extendedTypes)
+
+
+def _safe_media_path(folder_name, filename):
+    raw_folder = str(folder_name or '').strip('/\\')
+    if raw_folder and sanitize_url(raw_folder) == '#':
+        return '#'
+    safe_folder = quote(raw_folder, safe='')
+    safe_filename = quote(os.path.basename(str(filename or '')), safe='')
+    if safe_folder and safe_filename:
+        raw_path = f'{safe_folder}/{safe_filename}'
+    else:
+        raw_path = safe_folder or safe_filename
+    return sanitize_url(raw_path)
+
+
+def _build_mms_media_html(filename, folder_name, content_type):
+    safe_url = escape_attr(_safe_media_path(folder_name, filename))
+    file_label = os.path.basename(str(filename or ''))
+    safe_title = escape_attr(file_label)
+    safe_text = escape_text(file_label)
+    normalized_ct = str(content_type or '').lower()
+
+    if 'image' in normalized_ct:
+        return (
+            f'<a href="{safe_url}"><img src="{safe_url}" class="img-fluid z-depth-2 zoom" '
+            f'style="max-height: 400px" title="{safe_title}" alt="{safe_title}"></a>'
+        )
+    if 'audio' in normalized_ct:
+        return f'<audio controls><source src="{safe_url}"></audio>'
+    if 'video' in normalized_ct:
+        return f'<video controls width="250"><source src="{safe_url}"></video>'
+    return f'<a href="{safe_url}">{safe_text}</a>'
 
 def AppendSmsRowToDataList(data_list, row, wrap_text):
     if wrap_text:
@@ -178,15 +211,9 @@ def add_mms_to_data_list(data_list, mms_list, folder_name):
             continue
         else:
             if mms.filename:
-                if mms.ct.find('image') >= 0:
-                    body = '<a href="{1}/{0}"><img src="{1}/{0}" class="img-fluid z-depth-2 zoom" style="max-height: 400px" title="{0}"></a>'.format(mms.filename, folder_name)
-                elif mms.ct.find('audio') >= 0:
-                    body = '<audio controls><source src="{1}/{0}"></audio>'.format(mms.filename, folder_name)
-                elif mms.ct.find('video') >= 0:
-                    body = '<video controls width="250"><source src="{1}/{0}"></video>'.format(mms.filename, folder_name)
-                else:
+                if mms.ct and mms.ct.find('image') < 0 and mms.ct.find('audio') < 0 and mms.ct.find('video') < 0:
                     logfunc(f'Unknown body type, content type = {mms.ct}')
-                    body = '<a href="{1}/{0}">{0}</a>'.format(mms.filename, folder_name)
+                body = _build_mms_media_html(mms.filename, folder_name, mms.ct)
             else:
                 body = mms.body
             
@@ -265,7 +292,12 @@ def read_mms_messages(db, report_folder, file_found, seeker):
         # add last msg to list
         add_mms_to_data_list(data_list, temp_mms_list, folder_name)
 
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            html_no_escape=['Body'],
+        )
         report.end_artifact_report()
         
         tsvname = f'mms messages'

@@ -93,7 +93,12 @@ def get_libretorrentFR(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Libre Torrent - Fast Resume')
         report.add_script()
         data_headers = ('Torrent InfoHash','Torrent Name','Save Path','Name','Total Downloaded','Total Uploaded','Length - Path','Key - Value')
-        report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            html_no_escape=['Length - Path', 'Key - Value'],
+        )
         report.end_artifact_report()
         
         tsvname = f'Libre Torrent - Fast Resume'

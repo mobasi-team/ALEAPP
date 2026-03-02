@@ -78,7 +78,7 @@ def get_garmin(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, 'Garmin - GCM Cache Activities', description)
                 report.add_script()
                 data_headers = ('Start Timestamp (UTC)', 'Start Timestamp (Local)','End Timestamp (UTC)','Duration','Activity Type','User Full Name','User ID','Distance (Miles)','Distance (KM)','Start Latitude','Start Longitude','End Latitude','End Longitude','Average Heart Rate','Calories Burned','Activity Name','Activity ID','Location Name')
-                report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = 'Garmin - GCM Cache Activities'
@@ -118,7 +118,7 @@ def get_garmin(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, 'Garmin - Devices', description)
                 report.add_script()
                 data_headers = ('Last Connection Timestamp','Product Display Name','Bluetooth Friendly Name','Mac Address','Connection Type','Software Version','Unit ID','Product Image URL')
-                report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = 'Garmin - Devices'
@@ -167,7 +167,7 @@ def get_garmin(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, 'Garmin - Weather', description)
                 report.add_script()
                 data_headers = ('Saved Timestamp','Issue Date','Latitude','Longitude','Weather Station ID','Weather Station Name','Temperature','Apparent Temperature','Dew Point','Relative Humidity','Weather Type','Wind Direction (Degrees)','Wind Direction (Compass Point)','Wind Speed','Concept ID')
-                report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = 'Garmin - Weather'
@@ -219,7 +219,7 @@ def get_garmin(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, 'Garmin - Notifications', description)
                 report.add_script()
                 data_headers = ('Status Timestamp','Notification Status','Title','Subtitle','Message','Package Name','Positive Action','Negative Action','Phone Number','Type','Post Timestamp','When Timestamp')
-                report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = 'Garmin - Notifications'
@@ -295,7 +295,7 @@ def get_garmin(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, 'Garmin - Cache DB Activities', description)
                 report.add_script()
                 data_headers = ('Start Timestamp (UTC)','End Timestamp (UTC)','Start Timestamp (Local)','End Timestamp (Local)','Duration','Activity Type','Owner Full Name','Owner ID','Distance (Miles)','Distance (KM)','Start Latitude','Start Longitude','End Latitude','End Longitude','Average Heart Rate','Calories Burned','Steps','Device Manufacturer','Device ID','Location Name','Activity Name','Activity ID','Last Update Timestamp')
-                report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = 'Garmin - Cache DB Activities'
@@ -348,7 +348,7 @@ def get_garmin(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, 'Garmin - Sleep Activities', description)
                 report.add_script()
                 data_headers = ('Sleep Start Timestamp (UTC)','Sleep End Timestamp (UTC)','Auto Sleep Start Timestamp (UTC)','Auto Sleep End Timestamp (UTC)','Total Sleep Time','Deep Sleep','Light Sleep','REM Sleep','Awake Sleep','Average Sp02','Lowest Sp02','Average Breaths/min','Lowest Breaths/min','Highest Breaths/min','Last Updated Timestamp')
-                report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = 'Garmin - Sleep Activities'

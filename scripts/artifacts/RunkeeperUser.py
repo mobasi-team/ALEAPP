@@ -68,7 +68,12 @@ def get_run_user(files_found, report_folder, seeker, wrap_text):
         data_list = []
         for key, value in user_info.items():
             data_list.append((key, value))
-        report.write_artifact_data_table(data_headers, data_list, file, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file,
+            html_no_escape=['Value'],
+        )
         report.end_artifact_report()
         tsvname = f'User'
         tsv(report_folder, data_headers, data_list, tsvname)

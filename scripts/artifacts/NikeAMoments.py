@@ -5,9 +5,19 @@
 # Version: 1.0
 # Requirements: Python 3.7 or higher
 import datetime
+import json
 
 from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv, timeline, open_sqlite_db_readonly
+
+
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
 
 
 def get_nike_activMoments(files_found, report_folder, seeker, wrap_text):
@@ -32,6 +42,7 @@ def get_nike_activMoments(files_found, report_folder, seeker, wrap_text):
         data_headers = ('Activity ID', 'Start Time UTC', 'End Time UTC', 'Duration', 'Timeline')
         data_list = []
         timelineList = []
+        timeline_actions = {}
         for row in all_rows:
             timelineArray = []
             id = row[0]
@@ -83,15 +94,49 @@ def get_nike_activMoments(files_found, report_folder, seeker, wrap_text):
                             timelineArray.append(
                                 {'time': time, 'text': 'GPS signal found', 'type': 'fas fa-solid fa-location-dot'})
             timelineArray.append({'time': end_hour, 'text': 'Run ended', 'type': 'fas fa-solid fa-stopwatch'})
-            data_list.append((id, start_time_d, end_time_d, duration,
-                              '<button type="button" class="btn btn-light btn-sm" onclick="openTimeline(\'' + str(
-                                  id) + '\')">Show Timeline</button>'))
+            action_id = f'nike-activity-timeline-action-{len(timeline_actions)}'
+            timeline_actions[action_id] = str(id)
+            data_list.append(
+                (
+                    id,
+                    start_time_d,
+                    end_time_d,
+                    duration,
+                    f'<a class="btn btn-light btn-sm nike-moments-timeline-view" href="#" id="{action_id}">'
+                    'Show Timeline</a>',
+                )
+            )
             timelineList.append((id, timelineArray))
         # Added feature to allow the user to sort the data by the selected collumns and with the ID of the table
         tableID = 'nike_activities'
         report.filter_by_date(tableID, 1)
 
-        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=tableID, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=tableID,
+            html_no_escape=['Timeline'],
+        )
+        timeline_actions_js = _to_safe_inline_json(timeline_actions)
+        report.script_code += f"""<script>
+           (function() {{
+               const timelineActions = {timeline_actions_js};
+               document.addEventListener('click', function(event) {{
+                   const trigger = event.target.closest('a.nike-moments-timeline-view');
+                   if (!trigger) {{
+                       return;
+                   }}
+                   event.preventDefault();
+                   const timelineId = timelineActions[trigger.id];
+                   if (typeof timelineId === 'undefined') {{
+                       return;
+                   }}
+                   openTimeline(String(timelineId));
+               }});
+           }})();
+           </script>
+           """
         report.add_section_heading("Timeline Data")
         for timeData in timelineList:
             report.add_timeline(timeData[0], timeData[1])

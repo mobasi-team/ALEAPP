@@ -105,7 +105,12 @@ def get_garminFB(files_found, report_folder, seeker, wrap_text):
                         data_list.append(("friends", v["summary"]["total_count"]))
                     else:
                         data_list.append((k, v))
-                report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                report.write_artifact_data_table(
+                    data_headers,
+                    data_list,
+                    file_found,
+                    html_no_escape=['Value'],
+                )
 
             report.end_artifact_report()
             tsvname = f'Garmin - Facebook'

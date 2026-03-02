@@ -240,10 +240,35 @@ def get_adidas_activities(files_found, report_folder, seeker, wrap_text):
                 # Change the total of the last element of the list
                 activity_json[-1]['total'] += 1
             if poly:
+                map_link = (
+                    f'<a href="#{sampleId}" class="btn btn-light btn-sm adidas-activities-map-link">'
+                    'Show Map</a>'
+                )
                 if use_network:
-                    data_list.append((sampleId, userId, distance, startTime, endTime, runtime, maxSpeed, calories, temperature, note, maxPulse, avgPulse, maxElevation, minElevation, humidity, '<a href=Adidas-Running/'+str(row[0])+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', '<a href=Adidas-Running/'+str(row[0])+'.xlsx class="badge badge-light" target="_blank">'+str(row[0])+'.xlsx</a>', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(sampleId)+'\')">Show Map</button>'))
+                    data_list.append(
+                        (
+                            sampleId,
+                            userId,
+                            distance,
+                            startTime,
+                            endTime,
+                            runtime,
+                            maxSpeed,
+                            calories,
+                            temperature,
+                            note,
+                            maxPulse,
+                            avgPulse,
+                            maxElevation,
+                            minElevation,
+                            humidity,
+                            '<a href=Adidas-Running/' + str(row[0]) + '.kml class="badge badge-light" target="_blank">' + str(row[0]) + '.kml</a>',
+                            '<a href=Adidas-Running/' + str(row[0]) + '.xlsx class="badge badge-light" target="_blank">' + str(row[0]) + '.xlsx</a>',
+                            map_link,
+                        )
+                    )
                 else:
-                    data_list.append((sampleId, userId, distance, startTime, endTime, runtime, maxSpeed, calories, temperature, note, maxPulse, avgPulse, maxElevation, minElevation, humidity, '<a href=Adidas-Running/'+str(row[0])+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', 'N/A', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(sampleId)+'\')">Show Map</button>'))
+                    data_list.append((sampleId, userId, distance, startTime, endTime, runtime, maxSpeed, calories, temperature, note, maxPulse, avgPulse, maxElevation, minElevation, humidity, '<a href=Adidas-Running/'+str(row[0])+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', 'N/A', map_link))
             else:
                 data_list.append((sampleId, userId, distance, startTime, endTime, runtime, maxSpeed, calories, temperature, note, maxPulse, avgPulse, maxElevation, minElevation, humidity, 'N/A', 'N/A', 'N/A'))
         # Added feature to allow the user to sort the data by the selected collumns and with the ID of the table
@@ -251,9 +276,26 @@ def get_adidas_activities(files_found, report_folder, seeker, wrap_text):
         report.add_heat_map(json.dumps(activity_json))
         report.filter_by_date(tableID, 3)
 
-        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=tableID, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=tableID,
+            html_no_escape=['Coordinates KML', 'Coordinates Excel', 'Button'],
+        )
         # Add the map to the report
         report.add_section_heading('Adidas Polyline Map')
+        report.script_code += """
+<script>
+$(document).on('click', 'a.adidas-activities-map-link', function(event) {
+    event.preventDefault();
+    const target = (this.getAttribute('href') || '').replace(/^#/, '');
+    if (target) {
+        openMap(target);
+    }
+});
+</script>
+"""
         for htmlMap in html_map:
             report.add_map(htmlMap)
         report.end_artifact_report()

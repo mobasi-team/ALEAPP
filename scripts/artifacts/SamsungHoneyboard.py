@@ -112,7 +112,12 @@ def get_honeyboard_screenshot(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Samsung Honeyboard - Clipboard Screenshots', description)
         report.add_script()
         data_headers = ('File Modified Time','Thumbnail','Screenshot Path' )
-        report.write_artifact_data_table(data_headers, data_list, path_to_files, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            path_to_files,
+            html_no_escape=['Thumbnail'],
+        )
         report.end_artifact_report()
         
         tsvname = 'Samsung Honeyboard - Clipboard Screenshots'

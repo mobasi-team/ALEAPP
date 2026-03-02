@@ -40,7 +40,7 @@ def get_kleinanzeigenrecentsearchescache(files_found, report_folder, seeker, wra
                     data_list = []
                     for row in data:
                         data_list.append((row[0], row[1], row[2]))
-                    report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                    report.write_artifact_data_table(data_headers, data_list, file_found)
                     report.end_artifact_report()
 
                     tsvname = "kleinanzeigen.de - Recent Search Cache Data"
@@ -69,7 +69,7 @@ def get_kleinanzeigennonresettablerecentsearchescache(files_found, report_folder
                     data_list = []
                     for row in data:
                         data_list.append((row[0], row[1], row[2]))
-                    report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                    report.write_artifact_data_table(data_headers, data_list, file_found)
                     report.end_artifact_report()
 
                     tsvname = "kleinanzeigen.de - resettable recent Search Cache Data"
@@ -114,7 +114,7 @@ def get_kleinanzeigenaccount(files_found, report_folder, seeker, wrap_text):
                     data_headers = ('Account Profile Name', 'Account Profile Initials', 'Account Last Used Email Address', 'Account User Id',  'Account Authenticated Email Address', 'Account Phone Number', 'Account Type', 'Account Registered since', 'Saved Location Longitude', 'Saved Location Latitude')
                     data_list = []
                     data_list.append((data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]))
-                    report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                    report.write_artifact_data_table(data_headers, data_list, file_found)
                     report.end_artifact_report()
 
                     tsvname = "kleinanzeigen.de - Account Data"
@@ -225,7 +225,12 @@ def get_kleinanzeigenmessagebox(files_found, report_folder, seeker, wrap_text):
                     tsv(report_folder, singledata_headers, singlereport_list, singletsvname)
 
                     data_list.append((row[0], row[1], row[2], row[3], row[4], button))
-                report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                report.write_artifact_data_table(
+                    data_headers,
+                    data_list,
+                    file_found,
+                    html_no_escape=[''],
+                )
                 report.end_artifact_report()
 
                 tsvname = "kleinanzeigen.de - messagebox"

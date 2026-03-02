@@ -127,7 +127,7 @@ def get_TripEvents(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Trip Events', description)
         report.add_script()
         event_headers = ('Timestamp', 'Event Type', 'Latitude', 'Longitude', 'Speed (m/s)', 'Speed (mph)', 'Top Speed (m/s)', 'Top Speed (mph)', 'Average Speed (m/s)', 'Average Speed (mph)', 'Distance (m)', 'Trip ID')
-        report.write_artifact_data_table(event_headers, data_list_events, file_found, html_escape=False)
+        report.write_artifact_data_table(event_headers, data_list_events, file_found)
         report.end_artifact_report()
 
     
@@ -137,7 +137,7 @@ def get_TripEvents(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Trip Waypoints', description)
         report.add_script()
         waypoint_headers = ('Latitude', 'Longitude', 'Accuracy (m)', 'Trip ID')
-        report.write_artifact_data_table(waypoint_headers, data_list_waypoints, file_found, html_escape=False)
+        report.write_artifact_data_table(waypoint_headers, data_list_waypoints, file_found)
         report.end_artifact_report()
 
     
@@ -176,6 +176,5 @@ def get_TripEvents(files_found, report_folder, seeker, wrap_text):
 
 
     
-
 
 

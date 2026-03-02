@@ -1,13 +1,41 @@
 import html
 import os
 from pathlib import Path
+import re
 import shutil
 
 from collections import OrderedDict
 from scripts.html_parts import *
+from scripts.html_security import escape_attr, escape_text, sanitize_html_fragment, sanitize_url
 from scripts.ilapfuncs import logfunc
 from scripts.version_info import aleapp_version, aleapp_contributors
 from scripts.report_icons import icon_mappings, feather_icon_names
+
+_ALLOWED_LOGO_MIMETYPES = {
+    'image/png',
+    'image/jpeg',
+    'image/gif',
+    'image/webp',
+    'image/bmp',
+}
+
+
+def _sanitize_logo_mimetype(mimetype):
+    if not mimetype:
+        return ''
+    normalized = str(mimetype).strip().lower()
+    return normalized if normalized in _ALLOWED_LOGO_MIMETYPES else ''
+
+
+def _sanitize_logo_b64(payload):
+    if not payload:
+        return ''
+    compact = ''.join(str(payload).split())
+    if not compact:
+        return ''
+    if not re.fullmatch(r'[A-Za-z0-9+/=]+', compact):
+        return ''
+    return compact
 
 def get_icon_name(category, artifact):
     """
@@ -200,15 +228,15 @@ def create_index_html(reportfolderbase, time_in_secs, time_HMS, extraction_type,
 
     # Get script run log (this will be tab2)
     devinfo_files_path = os.path.join(reportfolderbase, 'Script Logs', 'DeviceInfo.html')
-    tab2_content = get_file_content(devinfo_files_path)
+    tab2_content = sanitize_html_fragment(get_file_content(devinfo_files_path))
 
     # Get script run log (this will be tab3)
     script_log_path = os.path.join(reportfolderbase, 'Script Logs', 'Screen Output.html')
-    tab3_content = get_file_content(script_log_path)
+    tab3_content = sanitize_html_fragment(get_file_content(script_log_path))
 
     # Get processed files list (this will be tab3)
     processed_files_path = os.path.join(reportfolderbase, 'Script Logs', 'ProcessedFilesLog.html')
-    tab4_content = get_file_content(processed_files_path)
+    tab4_content = sanitize_html_fragment(get_file_content(processed_files_path))
 
     content += tabs_code.format(tab1_content, tab2_content, tab3_content, tab4_content)
 
@@ -254,29 +282,35 @@ def create_index_html(reportfolderbase, time_in_secs, time_HMS, extraction_type,
 
 def generate_authors_table_code(ileapp_contributors):
     authors_data = ''
-    for author_name, blog, tweet_handle, git in aleapp_contributors:
+    for author_name, blog, tweet_handle, git in ileapp_contributors:
         author_data = ''
-        if blog:
-            author_data += f'<a href="{blog}" target="_blank">{blog_icon}</a> &nbsp;\n'
+        blog_url = sanitize_url(blog)
+        if blog_url not in ('', '#'):
+            author_data += f'<a href="{escape_attr(blog_url)}" target="_blank" rel="noopener noreferrer">{blog_icon}</a> &nbsp;\n'
         else:
             author_data += f'{blank_icon} &nbsp;\n'
         if tweet_handle:
-            author_data += f'<a href="https://twitter.com/{tweet_handle}" target="_blank">{twitter_icon}</a> &nbsp;\n'
+            safe_handle = re.sub(r'[^A-Za-z0-9_]', '', str(tweet_handle))
+            if safe_handle:
+                author_data += f'<a href="https://twitter.com/{safe_handle}" target="_blank" rel="noopener noreferrer">{twitter_icon}</a> &nbsp;\n'
+            else:
+                author_data += f'{blank_icon} &nbsp;\n'
         else:
             author_data += f'{blank_icon} &nbsp;\n'
-        if git:
-            author_data += f'<a href="{git}" target="_blank">{github_icon}</a>\n'
+        git_url = sanitize_url(git)
+        if git_url not in ('', '#'):
+            author_data += f'<a href="{escape_attr(git_url)}" target="_blank" rel="noopener noreferrer">{github_icon}</a>\n'
         else:
             author_data += f'{blank_icon}'
 
-        authors_data += individual_contributor.format(author_name, author_data)
+        authors_data += individual_contributor.format(escape_text(author_name), author_data)
     return authors_data
 
 def generate_key_val_table_without_headings(title, data_list, agency_logo_mimetype, agency_logo_b64):
     '''Returns the html code for a key-value table (2 cols) without col names'''
     code = ''
     if title:
-        code += f'<h2>{title}</h2>'
+        code += f'<h2>{escape_text(title)}</h2>'
     table_header_code = \
         """
         <div class="table-responsive">
@@ -293,9 +327,11 @@ def generate_key_val_table_without_headings(title, data_list, agency_logo_mimety
 
     # Add the rows
     code += '<tr>'
-    if agency_logo_b64 and agency_logo_mimetype:
+    safe_mimetype = _sanitize_logo_mimetype(agency_logo_mimetype)
+    safe_logo_b64 = _sanitize_logo_b64(agency_logo_b64)
+    if safe_logo_b64 and safe_mimetype:
         code += f'<td rowspan="{len(data_list) + 1}" style="text-align: center; vertical-align: middle">\
-            <img src="data:{agency_logo_mimetype};base64,{agency_logo_b64}" \
+            <img src="data:{escape_attr(safe_mimetype)};base64,{escape_attr(safe_logo_b64)}" \
             style="min-width: 50px; max-width:200px"></div>\
             </td>'
     for row in data_list:

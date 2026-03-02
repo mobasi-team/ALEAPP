@@ -6,6 +6,7 @@ import sqlite3
 import xml.etree.ElementTree as ET
 
 from scripts.artifact_report import ArtifactHtmlReport
+from scripts.html_security import trust_html
 from scripts.ilapfuncs import logfunc, tsv, is_platform_windows, abxread, checkabx
 
 def get_recentactivity(files_found, report_folder, seeker, wrap_text):
@@ -203,8 +204,9 @@ def process_recentactivity(folder, uid, report_folder):
             else:
                 image_data_row.append('<a href="{1}/{0}"><img src="{1}/{0}" class="img-fluid z-depth-2 zoom" style="max-height: 400px" title="{0}"></a>'.format(str(row[12]), folder_name))
             report.write_artifact_data_table(image_data_headers, image_data_list, folder, table_id='', table_style="width: auto", 
-                write_total=False, write_location=False, html_escape=False, cols_repeated_at_bottom=False)
-            report.write_raw_html('<br />')
+                write_total=False, write_location=False, cols_repeated_at_bottom=False,
+                html_no_escape=['Snapshot_Image', 'Recent_Image'])
+            report.write_raw_html(trust_html('<br />'))
         
         report.end_artifact_report()
 

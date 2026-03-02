@@ -46,7 +46,13 @@ def get_puma_users(files_found, report_folder, seeker, wrap_text):
 
         # Filter by date
         table_id = "PumaUsers"
-        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=table_id, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['Profile Image URL'],
+        )
         report.end_artifact_report()
 
         tsvname = f'Puma - User'

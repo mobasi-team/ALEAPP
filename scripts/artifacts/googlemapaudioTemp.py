@@ -44,7 +44,7 @@ def get_googlemapaudioTemp(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Google Maps Temp Voice Guidance')
         report.add_script()
         data_headers = ('Timestamp Modified', 'Audio', 'Name', 'File Size')
-        report.write_artifact_data_table(data_headers, data_list, source_dir, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, source_dir, html_no_escape=['Audio'])
         report.end_artifact_report()
             
         tsvname = f'Google Maps Temp Voice Guidance'

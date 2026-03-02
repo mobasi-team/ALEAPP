@@ -55,7 +55,12 @@ def get_galleryTrash(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, 'Gallery Trash Files')
                 report.add_script()
                 data_headers = ('Timestamp','Date Deleted','Deleted Media','Trash Title','Original Title','Trash Path','Orginal Path','Extra Data','Latitude','Longitude') 
-                report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                report.write_artifact_data_table(
+                    data_headers,
+                    data_list,
+                    file_found,
+                    html_no_escape=['Deleted Media', 'Extra Data'],
+                )
                 report.end_artifact_report()
                 
                 tsvname = f'Gallery Trash Files'

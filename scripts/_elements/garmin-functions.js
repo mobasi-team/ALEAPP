@@ -24,7 +24,7 @@ function changeJSONHidden(btn) {
     let btnValue = btn.value;
 
     //Copy the text inside the element
-    x.innerHTML = btnValue;
+    x.textContent = btnValue;
     hljs.highlightAll();
 }
 

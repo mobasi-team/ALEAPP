@@ -52,7 +52,7 @@ def get_keepNotes(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, 'Google Keep Notes')
                 report.add_script()
                 data_headers = ('Time Created', 'Time Last Updated', 'User Edited Timestamp', 'Title', 'Text', 'Last Modifier Email')
-                report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
 
                 tsvname = 'Google Keep Notes'
@@ -63,4 +63,3 @@ def get_keepNotes(files_found, report_folder, seeker, wrap_text):
 
             else:
                 logfunc('No Google Keep Notes data available')
-

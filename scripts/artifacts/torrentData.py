@@ -104,7 +104,7 @@ def get_TorrentData(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Torrent Data')
         report.add_script()
         data_headers = ('Torrent Name','Info Hash','Path')
-        report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, file_found)
         report.end_artifact_report()
         
         tsvname = f'Torrent Data'

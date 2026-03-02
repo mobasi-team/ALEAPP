@@ -63,7 +63,7 @@ def get_stress_api(files_found, report_folder, seeker, wrap_text):
                     rest_stress_duration = 'N/A'
                 data_list.append((date, stress_level, high_stress_duration, medium_stress_duration, low_stress_duration, rest_stress_duration))
     report.filter_by_date('GarminStressAPI', 0)
-    report.write_artifact_data_table(data_headers, data_list, file, html_escape=False, table_id='GarminStressAPI')
+    report.write_artifact_data_table(data_headers, data_list, file, table_id='GarminStressAPI')
     report.add_chart()
     report.add_chart_script('myChart', 'line', stress, dates, 'Stress Level', 'Date', 'Stress Level')
     report.end_artifact_report()

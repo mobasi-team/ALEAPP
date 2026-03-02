@@ -123,7 +123,12 @@ def get_smyFiles2(files_found, report_folder, seeker, wrap_text):
             thumb = media_to_html(row[1], files_found, report_folder)
             data_list.append((row[0],thumb,row[1],row[2],row[3],row[4],row[5],row[6],row[7]))
             
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            html_no_escape=['Thumbnail'],
+        )
         report.end_artifact_report()
         
         tsvname = f'My Files db - Google Drive'

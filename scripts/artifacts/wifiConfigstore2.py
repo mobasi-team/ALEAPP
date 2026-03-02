@@ -116,7 +116,7 @@ def get_wifiConfigstore(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, f'Wifi Configuration Store Combined - {count}')
                 report.add_script()
                 data_headers = ['ConfigKey','SSID','BSSID','PreSharedKey','WEPKeys','HiddenSSID','RandomizedMacAddress','CreatorName','CreationTime','ConnectChoice','ConnectChoiceTimeStamp','HasEverConnected','IpAssignment','ProxySettings']
-                report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = f'Wifi Configuration Store data - {count}'

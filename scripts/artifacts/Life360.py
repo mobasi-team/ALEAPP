@@ -176,7 +176,7 @@ def get_Life360(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Timestamp','Thread ID','Sender ID','Sender Name','Message','Message Sent','Message Read','Message Dismissed','Message Deleted','Has Location','Latitude','Longitude','Location Name','Location Timestamp','Source File')
 
-        report.write_artifact_data_table(data_headers, data_list_messaging, messaging_db, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list_messaging, messaging_db)
         report.end_artifact_report()
         
         tsvname = f'Life360 - Chat Messages'
@@ -195,7 +195,7 @@ def get_Life360(files_found, report_folder, seeker, wrap_text):
         data_headers = ('Place Name','Latitude','Longitude','Radius (m)','Places Source','Source ID','Owner ID','Source File')
         data_headers_kml = ('Timestamp','Latitude','Longitude','Place Name')
 
-        report.write_artifact_data_table(data_headers, data_list_places, places_db, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list_places, places_db)
         report.end_artifact_report()
         
         tsvname = f'Life360 - Places'
@@ -214,7 +214,7 @@ def get_Life360(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Timestamp','Latitude','Longitude','Altitude','Speed (mps)','Course','Bearing','Vertical Accuracy (+/- m)','Horizontal Accuracy (+/- m)','Location Mode','Connected Access Point BSSID','Connected Access Point SSID','ID','Source File')
 
-        report.write_artifact_data_table(data_headers, data_list_geo, geo_db, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list_geo, geo_db)
         report.end_artifact_report()
         
         tsvname = f'Life360 - Locations'
@@ -236,7 +236,7 @@ def get_Life360(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Timestamp','Device Battery (%)','Charging','Source File')
 
-        report.write_artifact_data_table(data_headers, data_list_battery, geo_db, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list_battery, geo_db)
         report.end_artifact_report()
         
         tsvname = f'Life360 - Device Battery'

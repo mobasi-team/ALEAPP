@@ -72,7 +72,7 @@ def get_meetmechats(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'MeetMe Chats', description)
         report.add_script()
         data_headers = ('Timestamp','Thread ID','First Name','Last Name','Sent By','Message Text','Type','Attachment Path') 
-        report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, file_found)
         report.end_artifact_report()
         
         tsvname = 'MeetMe Chats'

@@ -21,7 +21,7 @@ def get_imagemngCache(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, f'Image Manager Cache')
         report.add_script()
         data_headers = ('Timestamp Last Modified', 'Media', 'Filename', 'Source File')
-        report.write_artifact_data_table(data_headers, data_list, 'See paths in report', html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, 'See paths in report', html_no_escape=['Media'])
         report.end_artifact_report()
         
         tsvname = f'Image Manager Cache'

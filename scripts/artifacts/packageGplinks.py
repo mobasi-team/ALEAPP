@@ -1,4 +1,6 @@
 
+from urllib.parse import quote
+
 
 from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv, timeline, open_sqlite_db_readonly
@@ -16,7 +18,12 @@ def get_packageGplinks(files_found, report_folder, seeker, wrap_text):
         
     for x in values:
         bundleid = x.split(' ', 1)
-        url = f'<a href="https://play.google.com/store/apps/details?id={bundleid[0]}" target="_blank"><font color="blue">https://play.google.com/store/apps/details?id={bundleid[0]}</font></a>'
+        bundle_id = bundleid[0]
+        safe_bundle_id = quote(bundle_id, safe='')
+        url = (
+            f'<a href="https://play.google.com/store/apps/details?id={safe_bundle_id}" target="_blank">'
+            f'https://play.google.com/store/apps/details?id={safe_bundle_id}</a>'
+        )
         data_list.append((bundleid[0], url))
 
     usageentries = len(data_list)
@@ -25,7 +32,12 @@ def get_packageGplinks(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Google Play Links for Apps')
         report.add_script()
         data_headers = ('Bundle ID', 'Possible Google Play Store Link')
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            html_no_escape=['Possible Google Play Store Link'],
+        )
         report.end_artifact_report()
         
         tsvname = f'Google Play Links for Apps'

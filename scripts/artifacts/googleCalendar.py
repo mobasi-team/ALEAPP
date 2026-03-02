@@ -131,7 +131,7 @@ def get_calendar(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Calendar - Events', description)
         report.add_script()
         data_headers = ('Event Start Timestamp','Event End Timestamp','Event Timezone','Title','Description','Event Location','Sync ID','Organizer','Calendar Display Name','All Day Event','Has Alarm','Source')
-        report.write_artifact_data_table(data_headers, data_list_events, source_calendarDB,html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list_events, source_calendarDB)
         report.end_artifact_report()
         
         tsvname = 'Calendar - Events'
@@ -149,7 +149,7 @@ def get_calendar(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Calendar - Calendars', description)
         report.add_script()
         data_headers = ('Created Timestamp','Calendar Name','Calendar Display Name','Account Name','Account Type','Visible','Calendar Location','Timezone','Owner Account','Is Primary','Color','Color Index','Source')
-        report.write_artifact_data_table(data_headers, data_list_calendars, source_calendarDB,html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list_calendars, source_calendarDB)
         report.end_artifact_report()
         
         tsvname = 'Calendar - Calendars'

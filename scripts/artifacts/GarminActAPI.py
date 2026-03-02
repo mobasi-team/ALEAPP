@@ -120,7 +120,7 @@ def get_act_api(files_found, report_folder, seeker, wrap_text):
 
     report.add_heat_map(json.dumps(activity_json))
     report.filter_by_date('GarminActAPI', 1)
-    report.write_artifact_data_table(data_headers, data_list, file, html_escape=False, table_id='GarminActAPI')
+    report.write_artifact_data_table(data_headers, data_list, file, table_id='GarminActAPI')
     report.end_artifact_report()
     tsvname = f'Garmin Log'
     tsv(report_folder, data_headers, data_list, tsvname)

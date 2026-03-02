@@ -170,7 +170,7 @@ def get_notificationHistory(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Posted Time','Title', 'Text','Package Name','User ID','UID','Package Index','Channel Name','Channel Name Index','Channel ID','Channel ID Index','Conversation ID','Conversation ID Index','Major Version','Image Type','Image Bitmap Filename','Image Resource ID','Image Resource ID Package','Image Data Length','Image Data Offset','Image URI','Protobuf File Name','Protobuf File Creation Date')#,'','','','','','','','','','','','','','')
         file_directory = os.path.dirname(file_found)  
-        report.write_artifact_data_table(data_headers, data_pb_list, file_directory, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_pb_list, file_directory)
         report.end_artifact_report()
         
         tsvname = f'Android Notification History - Notifications'

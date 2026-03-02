@@ -55,7 +55,7 @@ def get_burnerUser(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'Burner User', description)
         report.add_script()
         data_headers = ('Timestamp','User ID','Phone Number','Auto Reply Message')
-        report.write_artifact_data_table(data_headers, data_list, file_found,html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, file_found)
         report.end_artifact_report()
         
         tsvname = 'Burner User'

@@ -47,6 +47,11 @@ import os
 from datetime import datetime
 
 from scripts.ilapfuncs import open_sqlite_db_readonly, media_to_html, get_sqlite_db_records, artifact_processor
+from scripts.html_security import sanitize_html_fragment
+
+
+def _sanitize_email_html(value):
+    return sanitize_html_fragment(value)
 
 @artifact_processor
 def gmailEmails(files_found, report_folder, seeker, wrap_text):
@@ -136,15 +141,26 @@ def gmailEmails(files_found, report_folder, seeker, wrap_text):
                     else:
                         subjectline = ''
                 
+                messagehtml = ''
                 messagetest = (message.get('6', '')) #HTML message
                 if messagetest != '':
-                    messagetest = message['6'].get('2','')
-                    if messagetest != '':
-                        if isinstance(message['6']['2'], list):
-                            for x in message['6']['2']:
-                                messagehtml = messagehtml + (x['3']['2'].decode())
+                    message_parts = message['6'].get('2', '')
+                    if message_parts != '':
+                        if isinstance(message_parts, list):
+                            html_parts = []
+                            for x in message_parts:
+                                part = x.get('3', {}).get('2', b'')
+                                if isinstance(part, bytes):
+                                    html_parts.append(part.decode('utf8', 'replace'))
+                                elif part:
+                                    html_parts.append(str(part))
+                            messagehtml = ''.join(html_parts)
                         else:
-                            messagehtml = (message['6']['2']['3']['2'].decode()) 
+                            part = message_parts.get('3', {}).get('2', b'')
+                            if isinstance(part, bytes):
+                                messagehtml = part.decode('utf8', 'replace')
+                            elif part:
+                                messagehtml = str(part)
                
                 mailedby = (message.get('11', {}).get('8', b'')) #mailed by
                 if isinstance(message.get('11', {}).get('8', ''), bytes): 
@@ -170,7 +186,23 @@ def gmailEmails(files_found, report_folder, seeker, wrap_text):
                             if attachpath.endswith(attachname):
                                 attachment = media_to_html(attachpath, files_found, report_folder)
                     
-                data_list.append((timestamp,serverid,messagehtml,attachment,attachname,to,toname,replyto,replytoname,subjectline,mailedby,signedby,bigTopDataDB))
+                data_list.append(
+                    (
+                        timestamp,
+                        serverid,
+                        _sanitize_email_html(messagehtml),
+                        attachment,
+                        attachname,
+                        to,
+                        toname,
+                        replyto,
+                        replytoname,
+                        subjectline,
+                        mailedby,
+                        signedby,
+                        bigTopDataDB,
+                    )
+                )
 
     data_headers = (('Timestamp','datetime'),'Email ID','Message','Attachment','Attachment Name','Recipient','Recipient Name','Reply To','Reply To Name','Subject Line','Mailed By','Signed by','Source File')
     return data_headers, data_list, 'See source file(s) below:'

@@ -4,8 +4,8 @@ import json
 import os
 import shutil
 import sqlite3
-from html import escape
 from scripts.artifact_report import ArtifactHtmlReport
+from scripts.html_security import escape_attr, escape_text, sanitize_url
 from scripts.ilapfuncs import logfunc, tsv, is_platform_windows, open_sqlite_db_readonly
 
 is_windows = is_platform_windows()
@@ -27,6 +27,22 @@ def recursive_convert_bytes_to_str(obj):
         except UnicodeDecodeError:
             ret = str(obj)
     return ret
+
+
+def _safe_screenshot_html(folder_name, filename):
+    relative_path = f'{folder_name}/{filename}'.replace('\\', '/')
+    safe_path = escape_attr(sanitize_url(relative_path))
+    safe_title = escape_attr(filename)
+    return (
+        f'<a href="{safe_path}"><img src="{safe_path}" class="img-fluid" '
+        f'style="max-height:600px; min-width:300px" title="{safe_title}"></a>'
+    )
+
+
+def _json_pre_block(value):
+    safe_value = escape_text(value).replace('\n', '<br>')
+    return f'<pre id="json" style="font-size: 110%">{safe_value}</pre>'
+
 
 def get_quicksearch_recent(files_found, report_folder, seeker, wrap_text):
     recents = []
@@ -121,16 +137,30 @@ def get_quicksearch_recent(files_found, report_folder, seeker, wrap_text):
                 screenshot_file_path = os.path.join(dir_path, f'{account_name}-{screenshot_id}.jpg')
                 if os.path.exists(screenshot_file_path):
                     shutil.copy2(screenshot_file_path, report_folder)
-                img_html = '<a href="{1}/{0}"><img src="{1}/{0}" class="img-fluid" style="max-height:600px; min-width:300px" title="{0}"></a>'.format(f'{account_name}-{screenshot_id}.jpg', folder_name)
+                screenshot_file = f'{account_name}-{screenshot_id}.jpg'
+                img_html = _safe_screenshot_html(folder_name, screenshot_file)
                 
                 platform = is_platform_windows()
                 if platform:
                     img_html = img_html.replace('?', '')
                 
                 recursive_convert_bytes_to_str(item) # convert all 'bytes' to str
-                data_list.append((search_timestamp,screenshot_file_path,search_query,img_html, '<pre id="json" style="font-size: 110%">'+ escape(json.dumps(item, indent=4)).replace('\\n', '<br>') +'</pre>'))
+                data_list.append(
+                    (
+                        search_timestamp,
+                        screenshot_file_path,
+                        search_query,
+                        img_html,
+                        _json_pre_block(json.dumps(item, indent=4)),
+                    )
+                )
 
-        report.write_artifact_data_table(data_headers, data_list, dir_path, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            dir_path,
+            html_no_escape=['Screenshot', 'Protobuf Data'],
+        )
         report.end_artifact_report()
         
         tsvname = f'google quick search box recent'

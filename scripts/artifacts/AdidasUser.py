@@ -78,7 +78,13 @@ def get_adidas_user(files_found, report_folder, seeker, wrap_text):
         data_list.append((user_id, name, height, weight, country, gender, email, created_at, '<img src="'+image+'" alt="'+image+'" width="50" height="50">', my_fitness_pal, garmin_connect, polar, last_sync))
 
         table_id = "AdidasUser"
-        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=table_id, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['Image'],
+        )
         report.end_artifact_report()
 
         tsvname = f'Adidas - User'

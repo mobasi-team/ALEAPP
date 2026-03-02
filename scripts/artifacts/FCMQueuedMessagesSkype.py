@@ -332,7 +332,12 @@ def get_fcm_skype(files_found, report_folder, seeker, wrap_text, mode):
 
         source_files = " ".join(str(x) for x in in_dirs)
 
-        report.write_artifact_data_table(message_table_header, message_rows, source_files, html_escape=False)
+        report.write_artifact_data_table(
+            message_table_header,
+            message_rows,
+            source_files,
+            html_no_escape=["Content"],
+        )
         report.end_artifact_report()
 
         scripts.ilapfuncs.tsv(report_folder, message_table_header, message_rows, report_name, source_files)
@@ -348,7 +353,12 @@ def get_fcm_skype(files_found, report_folder, seeker, wrap_text, mode):
 
         source_files = " ".join(str(x) for x in in_dirs)
 
-        report.write_artifact_data_table(notification_table_header, notification_rows, source_files, html_escape=False)
+        report.write_artifact_data_table(
+            notification_table_header,
+            notification_rows,
+            source_files,
+            html_no_escape=["Link"],
+        )
         report.end_artifact_report()
 
         scripts.ilapfuncs.tsv(report_folder, notification_table_header, notification_rows, report_name, source_files)

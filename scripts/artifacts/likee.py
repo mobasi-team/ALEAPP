@@ -4,6 +4,7 @@ import re
 import itertools
 import unicodedata
 from scripts.artifact_report import ArtifactHtmlReport
+from scripts.html_security import escape_attr, escape_text, sanitize_url
 from scripts.ilapfuncs import (
     logfunc,
     tsv,
@@ -25,6 +26,13 @@ def remove_control_chars(s):
     )
     control_char_re = re.compile("[%s]" % re.escape(control_chars))
     return control_char_re.sub("", s)
+
+
+def _safe_anchor_html(url, label=None):
+    safe_href = escape_attr(sanitize_url(url))
+    text = label if label is not None else url
+    safe_label = escape_text(text)
+    return f'<a href="{safe_href}" style="color:blue" target="_blank" rel="noopener noreferrer">{safe_label}</a>'
 
 
 def get_likee(files_found, report_folder, seeker, wrap_text):
@@ -54,9 +62,7 @@ def get_likee(files_found, report_folder, seeker, wrap_text):
                         loc_out = remove_control_chars(dstring1)
                         w.write(loc_out)
 
-        out = (
-            f'<a href="{final}" style = "color:blue" target="_blank">{journalName}</a>'
-        )
+        out = _safe_anchor_html(final, journalName)
         data_list.append((out, file_found))
 
         report = ArtifactHtmlReport("Likee User Location")
@@ -64,7 +70,7 @@ def get_likee(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ["Artifact", "Location"]
         report.write_artifact_data_table(
-            data_headers, data_list, file_found, html_escape=False
+            data_headers, data_list, file_found, html_no_escape=['Artifact']
         )
         report.end_artifact_report()
 
@@ -117,9 +123,7 @@ def get_likee_db(files_found, report_folder, seeker, wrap_text):
         for row in all_rows:
             db1_data_list.append((row[0], row[1], row[2]))
 
-        report.write_artifact_data_table(
-            db1_data_headers, db1_data_list, src_likee_pub, html_escape=False
-        )
+        report.write_artifact_data_table(db1_data_headers, db1_data_list, src_likee_pub)
         report.end_artifact_report()
 
         tsvname = f"Likee User Info"
@@ -158,9 +162,7 @@ def get_likee_db(files_found, report_folder, seeker, wrap_text):
             for row in all_rows:
                 db2_data_list.append((row[0], row[1], row[2]))
 
-            report.write_artifact_data_table(
-                db2_data_headers, db2_data_list, src_likee_msg, html_escape=False
-            )
+            report.write_artifact_data_table(db2_data_headers, db2_data_list, src_likee_msg)
             report.end_artifact_report()
 
             tsvname = f"Likee Messages"

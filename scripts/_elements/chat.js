@@ -1,3 +1,41 @@
+function sanitizeUrl(rawValue, allowDataMedia = false) {
+    if (typeof rawValue !== "string") {
+        return "#";
+    }
+
+    const value = rawValue.trim();
+    if (!value) {
+        return "";
+    }
+
+    const compact = value.replace(/[\u0000-\u0020]+/g, "").toLowerCase();
+    if (compact.startsWith("javascript:") || compact.startsWith("vbscript:")) {
+        return "#";
+    }
+    if (compact.startsWith("data:")) {
+        if (allowDataMedia && /^data:(image|audio|video)\/[a-z0-9.+-]+;base64,[a-z0-9+/=\s]+$/i.test(value)) {
+            return value;
+        }
+        return "#";
+    }
+
+    try {
+        const parsed = new URL(value, window.location.href);
+        const protocol = parsed.protocol.toLowerCase();
+        if (["http:", "https:", "mailto:", "tel:"].includes(protocol)) {
+            return value;
+        }
+        if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value)) {
+            return value;
+        }
+    } catch (error) {
+        if (!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(value)) {
+            return value;
+        }
+    }
+    return "#";
+}
+
 function createMessage(message, time, type, messageType, url) {
     let chat = document.getElementById("text-area");
     let div = document.createElement("div");
@@ -13,7 +51,8 @@ function createMessage(message, time, type, messageType, url) {
     } else if (messageType == "url") {
         let a = document.createElement("a");
         a.className = "small mb-0";
-        a.href = message;
+        const safeMessageUrl = sanitizeUrl(message, false);
+        a.href = safeMessageUrl || "#";
         a.target = "_blank";
         a.textContent = "Open link";
         div2.appendChild(a);
@@ -47,7 +86,10 @@ function createMessage(message, time, type, messageType, url) {
         div2.className = "p-3 me-3 border receiver";
         let img = document.createElement("img");
         img.className = "avatar";
-        img.src = url;
+        const safeAvatarUrl = sanitizeUrl(url, true);
+        if (safeAvatarUrl && safeAvatarUrl !== "#") {
+            img.src = safeAvatarUrl;
+        }
         div.appendChild(img);
     }
 }

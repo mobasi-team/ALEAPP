@@ -67,7 +67,7 @@ def get_googleKeepNotes(files_found, report_folder, seeker, wrap_text):
             for row in all_rows:
                 data_list.append((row[0], row[1], row[2], row[3], row[4], row[5], row[6], 'True' if row[7]==1 else 'False', row[8]))
 
-            report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+            report.write_artifact_data_table(data_headers, data_list, file_found)
             report.end_artifact_report()
 
             tsvname = "Google Keep - Notes"
@@ -122,7 +122,7 @@ def get_googleKeepNotes(files_found, report_folder, seeker, wrap_text):
             for row in all_rows:
                 data_list.append((row[0], row[1], row[2], row[3], row[4], row[5], 'Synced' if row[6]==1 else 'Not Synced', 'True' if row[7] == 1 else 'False'))
 
-            report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+            report.write_artifact_data_table(data_headers, data_list, file_found)
             report.end_artifact_report()
 
             tsvname = "Google Keep - Notes Sharing"

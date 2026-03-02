@@ -127,7 +127,12 @@ def get_onedrive(files_found, report_folder, seeker, wrap_text, time_offset):
         data_headers = (
             'Item Date', 'ID', 'Extension', 'File or Folder Name', 'Owner Name',
             'Sha1 Hash', 'Parent ID', 'Stream Location', 'Preview')
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            html_no_escape=['Preview'],
+        )
         report.end_artifact_report()
 
         tsvname = 'OneDrive Metadata'

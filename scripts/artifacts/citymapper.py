@@ -55,7 +55,17 @@ import folium
 import xml.etree.ElementTree as ET
 
 from scripts.artifact_report import ArtifactHtmlReport
+from scripts.html_security import escape_text, trust_html
 from scripts.ilapfuncs import artifact_processor, logfunc, kmlgen, open_sqlite_db_readonly, convert_unix_ts_to_utc
+
+
+def _write_description_list(report, rows):
+    row_html = ''.join(
+        f'<dt class="col-sm-3">{escape_text(label)}</dt><dd class="col-sm-9">{escape_text(value)}</dd>'
+        for label, value in rows
+    )
+    report.write_raw_html(trust_html(f'<dl class="row">{row_html}</dl>'))
+
 
 @artifact_processor
 def get_citymapperLocationHistory(files_found, report_folder, _seeker, _wrap_text):
@@ -164,39 +174,28 @@ def get_citymapperLocationHistory(files_found, report_folder, _seeker, _wrap_tex
             
             # Source Path section
             report.add_section_heading('Source Path', 'h3')
-            report.write_raw_html(f'''
-                <dl class="row">
-                    <dt class="col-sm-3">File Path</dt>
-                    <dd class="col-sm-9">{source}</dd>
-                </dl>
-            ''')
+            _write_description_list(report, [('File Path', source)])
             
             # Summary section
             report.add_section_heading('Location History Summary', 'h3')
-            report.write_raw_html(f'''
-                <dl class="row">
-                    <dt class="col-sm-3">Total Locations</dt>
-                    <dd class="col-sm-9">{len(location_data_list)}</dd>
-                    <dt class="col-sm-3">Locations with Coordinates</dt>
-                    <dd class="col-sm-9">{len(valid_coords)}</dd>
-                </dl>
-            ''')
+            _write_description_list(
+                report,
+                [
+                    ('Total Locations', len(location_data_list)),
+                    ('Locations with Coordinates', len(valid_coords)),
+                ],
+            )
             
             # Location Details Table
             report.add_section_heading('Location Details', 'h3')
-            table_html = '<table class="table table-striped"><thead><tr>'
-            for header in location_headers:
-                table_html += f'<th>{header}</th>'
-            table_html += '</tr></thead><tbody>'
-            
-            for row in location_data_list:
-                table_html += '<tr>'
-                for cell in row:
-                    table_html += f'<td>{cell if cell is not None else ""}</td>'
-                table_html += '</tr>'
-            
-            table_html += '</tbody></table>'
-            report.write_raw_html(table_html)
+            report.write_artifact_data_table(
+                location_headers,
+                location_data_list,
+                source,
+                write_total=False,
+                write_location=False,
+                cols_repeated_at_bottom=False,
+            )
             
             # Add map section
             report.add_section_heading('Location History Map')
@@ -310,37 +309,22 @@ def get_citymapperSavedTrips(files_found, report_folder, _seeker, _wrap_text):
             
             # Source Path section
             report.add_section_heading('Source Path', 'h3')
-            report.write_raw_html(f'''
-                <dl class="row">
-                    <dt class="col-sm-3">File Path</dt>
-                    <dd class="col-sm-9">{source}</dd>
-                </dl>
-            ''')
+            _write_description_list(report, [('File Path', source)])
             
             # Summary section
             report.add_section_heading('Saved Trips Summary', 'h3')
-            report.write_raw_html(f'''
-                <dl class="row">
-                    <dt class="col-sm-3">Total Saved Trips</dt>
-                    <dd class="col-sm-9">{len(saved_trip_data_list)}</dd>
-                </dl>
-            ''')
+            _write_description_list(report, [('Total Saved Trips', len(saved_trip_data_list))])
             
             # Trip Details Table
             report.add_section_heading('Trip Details', 'h3')
-            table_html = '<table class="table table-striped"><thead><tr>'
-            for header in trip_headers:
-                table_html += f'<th>{header}</th>'
-            table_html += '</tr></thead><tbody>'
-            
-            for row in saved_trip_data_list:
-                table_html += '<tr>'
-                for cell in row:
-                    table_html += f'<td>{cell if cell is not None else ""}</td>'
-                table_html += '</tr>'
-            
-            table_html += '</tbody></table>'
-            report.write_raw_html(table_html)
+            report.write_artifact_data_table(
+                trip_headers,
+                saved_trip_data_list,
+                source,
+                write_total=False,
+                write_location=False,
+                cols_repeated_at_bottom=False,
+            )
             
             # Add map section
             report.add_section_heading('Saved Trips Map')
@@ -489,75 +473,55 @@ def get_citymapperAppPreferences(files_found, report_folder, _seeker, _wrap_text
                 # Source Path section
                 report.add_section_heading('Source Paths', 'h3')
                 for file_found in files_found:
-                    report.write_raw_html(f'''
-                        <dl class="row">
-                            <dt class="col-sm-3">File Path</dt>
-                            <dd class="col-sm-9">{file_found}</dd>
-                        </dl>
-                    ''')
+                    _write_description_list(report, [('File Path', file_found)])
                 
                 # Device Information
                 report.add_section_heading('Device Information', 'h3')
-                report.write_raw_html(f'''
-                    <dl class="row">
-                        <dt class="col-sm-3">Device ID</dt>
-                        <dd class="col-sm-9">{device_id}</dd>
-                        <dt class="col-sm-3">Device IP</dt>
-                        <dd class="col-sm-9">{device_ip}</dd>
-                    </dl>
-                ''')
+                _write_description_list(report, [('Device ID', device_id), ('Device IP', device_ip)])
                 
                 # App Version Information
                 report.add_section_heading('App Version Information', 'h3')
-                report.write_raw_html(f'''
-                    <dl class="row">
-                        <dt class="col-sm-3">Last Seen Version</dt>
-                        <dd class="col-sm-9">{last_seen_version}</dd>
-                        <dt class="col-sm-3">Earliest Seen Version</dt>
-                        <dd class="col-sm-9">{earliest_seen_version}</dd>
-                        <dt class="col-sm-3">App Installed</dt>
-                        <dd class="col-sm-9">{app_installed}</dd>
-                    </dl>
-                ''')
+                _write_description_list(
+                    report,
+                    [
+                        ('Last Seen Version', last_seen_version),
+                        ('Earliest Seen Version', earliest_seen_version),
+                        ('App Installed', app_installed),
+                    ],
+                )
                 
                 # Location Information
                 report.add_section_heading('Location Information', 'h3')
-                report.write_raw_html(f'''
-                    <dl class="row">
-                        <dt class="col-sm-3">Last Location (Latitude, Longitude)</dt>
-                        <dd class="col-sm-9">{last_location}</dd>
-                        <dt class="col-sm-3">CityMapper Region</dt>
-                        <dd class="col-sm-9">{cm_region}</dd>
-                    </dl>
-                ''')
+                _write_description_list(
+                    report,
+                    [
+                        ('Last Location (Latitude, Longitude)', last_location),
+                        ('CityMapper Region', cm_region),
+                    ],
+                )
                 
                 # Session Information
                 report.add_section_heading('Session Information', 'h3')
-                report.write_raw_html(f'''
-                    <dl class="row">
-                        <dt class="col-sm-3">Onboarding Date</dt>
-                        <dd class="col-sm-9">{onboarding_date}</dd>
-                        <dt class="col-sm-3">Last Used Date</dt>
-                        <dd class="col-sm-9">{last_used_date}</dd>
-                        <dt class="col-sm-3">Session Count</dt>
-                        <dd class="col-sm-9">{session_count}</dd>
-                    </dl>
-                ''')
+                _write_description_list(
+                    report,
+                    [
+                        ('Onboarding Date', onboarding_date),
+                        ('Last Used Date', last_used_date),
+                        ('Session Count', session_count),
+                    ],
+                )
                 
                 # System & App Settings
                 report.add_section_heading('System & App Settings', 'h3')
-                report.write_raw_html(f'''
-                    <dl class="row">
-                        <dt class="col-sm-3">Language</dt>
-                        <dd class="col-sm-9">{language}</dd>
-                        <dt class="col-sm-3">Connectivity State</dt>
-                        <dd class="col-sm-9">{connectivity_state}</dd>
-                        <dt class="col-sm-3">OS API Level</dt>
-                        <dd class="col-sm-9">{os_api_level}</dd>
-                        <dt class="col-sm-3">Build Flavor</dt>
-                        <dd class="col-sm-9">{build_flavor}</dd>
-                    </dl>
-                ''')
+                _write_description_list(
+                    report,
+                    [
+                        ('Language', language),
+                        ('Connectivity State', connectivity_state),
+                        ('OS API Level', os_api_level),
+                        ('Build Flavor', build_flavor),
+                    ],
+                )
                 
                 # Add map section
                 report.add_section_heading('Last Location Map')

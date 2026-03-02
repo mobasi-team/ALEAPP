@@ -16,6 +16,7 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import quote
 import scripts.artifact_report as artifact_report
+from scripts.html_security import escape_attr, escape_text, sanitize_url
 
 # common third party imports
 import pytz
@@ -117,7 +118,7 @@ def logfunc(message=""):
 
     with open(OutputParameters.screen_output_file_path, 'a', encoding='utf8') as a:
         print(message)
-        a.write(message + '<br>' + OutputParameters.nl)
+        a.write(escape_text(message) + '<br>' + OutputParameters.nl)
 
 
 def strip_tuple_from_headers(data_headers):
@@ -235,18 +236,24 @@ def html_media_tag(media_path, mimetype, style, title=''):
 
     filename = Path(media_path).name
     media_path = quote(relative_paths(media_path))
+    media_url = escape_attr(sanitize_url(media_path, allow_data_media=True))
+    safe_title = escape_attr(title)
+    image_style = style if style else "max-height:300px; max-width:400px;"
+    if re.search(r'(expression|url\s*\(|javascript:|@import)', image_style, re.IGNORECASE):
+        image_style = "max-height:300px; max-width:400px;"
+    safe_style = escape_attr(image_style)
+    safe_filename = escape_text(filename)
 
     if mimetype == None:
         mimetype = ''
     if 'video' in mimetype:
-        thumb = f'<video width="320" height="240" controls="controls"><source src="{media_path}" type="video/mp4" preload="none">Your browser does not support the video tag.</video>'
+        thumb = f'<video width="320" height="240" controls="controls"><source src="{media_url}" type="video/mp4" preload="none">Your browser does not support the video tag.</video>'
     elif 'image' in mimetype:
-        image_style = style if style else "max-height:300px; max-width:400px;"
-        thumb = f'<a href="{media_path}" target="_blank"><img title="{title}"  src="{media_path}" style="{image_style}"></img></a>'
+        thumb = f'<a href="{media_url}" target="_blank"><img title="{safe_title}" src="{media_url}" style="{safe_style}"></img></a>'
     elif 'audio' in mimetype:
-        thumb = f'<audio controls><source src="{media_path}" type="audio/ogg"><source src="{media_path}" type="audio/mpeg">Your browser does not support the audio element.</audio>'
+        thumb = f'<audio controls><source src="{media_url}" type="audio/ogg"><source src="{media_url}" type="audio/mpeg">Your browser does not support the audio element.</audio>'
     else:
-        thumb = f'<a href="{media_path}" target="_blank"> Link to {filename} file</>'
+        thumb = f'<a href="{media_url}" target="_blank">Link to {safe_filename} file</a>'
     return thumb
 
 def get_data_list_with_media(media_header_info, data_list):
@@ -698,6 +705,7 @@ def media_to_html(media_path, files_found, report_folder):
                 index = splitted_a.index(x)
                 splitted_b = source.split(splitted_a[index - 1])
                 return '..' + splitted_b[1]
+        return source
 
 
     platform = is_platform_windows()
@@ -707,7 +715,7 @@ def media_to_html(media_path, files_found, report_folder):
     else:
         splitter = '/'
 
-    thumb = media_path
+    thumb = escape_text(media_path)
     for match in filter(media_path_filter, files_found):
         filename = os.path.basename(match)
         if filename.startswith('~') or filename.startswith('._') or filename != media_path:
@@ -734,14 +742,7 @@ def media_to_html(media_path, files_found, report_folder):
         if mimetype == None:
             mimetype = ''
 
-        if 'video' in mimetype:
-            thumb = f'<video width="320" height="240" controls="controls"><source src="{source}" type="video/mp4" preload="none">Your browser does not support the video tag.</video>'
-        elif 'image' in mimetype:
-            thumb = f'<a href="{source}" target="_blank"><img src="{source}"width="300"></img></a>'
-        elif 'audio' in mimetype:
-            thumb = f'<audio controls><source src="{source}" type="audio/ogg"><source src="{source}" type="audio/mpeg">Your browser does not support the audio element.</audio>'
-        else:
-            thumb = f'<a href="{source}" target="_blank"> Link to {filename} file</>'
+        thumb = html_media_tag(source, mimetype, '', filename)
     return thumb
 
 
@@ -823,23 +824,30 @@ def utf8_in_extended_ascii(input_string, *, raise_on_unexpected=False):
 
 def logdevinfo(message=""):
     with open(OutputParameters.screen_output_file_path_devinfo, 'a', encoding='utf8') as b:
-        b.write(message + '<br>' + OutputParameters.nl)
+        b.write(escape_text(message) + '<br>' + OutputParameters.nl)
 
 def write_device_info():
     with open(OutputParameters.screen_output_file_path_devinfo, 'a', encoding='utf8') as b:
         for category, values in identifiers.items():
-            b.write('<b>--- <u>' + category + ' </u>---</b><br>' + OutputParameters.nl)
+            b.write('<b>--- <u>' + escape_text(category) + ' </u>---</b><br>' + OutputParameters.nl)
             b.write('<ul>' + OutputParameters.nl)
             for label, data in values.items():
+                safe_label = escape_text(label)
                 if isinstance(data, list):
                     # Handle multiple values
-                    b.write('<li><b>' + label + ':</b><ul>' + OutputParameters.nl)
+                    b.write('<li><b>' + safe_label + ':</b><ul>' + OutputParameters.nl)
                     for item in data:
-                        b.write(f'<li>{item["value"]} <span title="{item["source_file"]}" style="cursor:help"><i>(Source: {item["artifact"]})</i></span></li>' + OutputParameters.nl)
+                        safe_value = escape_text(item.get("value", ""))
+                        safe_source = escape_attr(item.get("source_file", ""))
+                        safe_artifact = escape_text(item.get("artifact", ""))
+                        b.write(f'<li>{safe_value} <span title="{safe_source}" style="cursor:help"><i>(Source: {safe_artifact})</i></span></li>' + OutputParameters.nl)
                     b.write('</ul></li>' + OutputParameters.nl)
                 else:
                     # Handle single value
-                    b.write(f'<li><b>{label}:</b> {data["value"]} <span title="{data["source_file"]}" style="cursor:help"><i>(Source: {data["artifact"]})</i></span></li>' + OutputParameters.nl)
+                    safe_value = escape_text(data.get("value", ""))
+                    safe_source = escape_attr(data.get("source_file", ""))
+                    safe_artifact = escape_text(data.get("artifact", ""))
+                    b.write(f'<li><b>{safe_label}:</b> {safe_value} <span title="{safe_source}" style="cursor:help"><i>(Source: {safe_artifact})</i></span></li>' + OutputParameters.nl)
             b.write('</ul>' + OutputParameters.nl)
 
 def device_info(category, label, value, source_file=""):

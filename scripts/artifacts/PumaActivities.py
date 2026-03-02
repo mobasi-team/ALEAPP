@@ -219,15 +219,40 @@ def get_puma_activities(files_found, report_folder, seeker, wrap_text):
                 activity_json[-1]['total'] += 1
 
             if map:
+                map_link = (
+                    f'<a href="#{id}" class="btn btn-light btn-sm puma-activities-map-link">'
+                    'Show Map</a>'
+                )
                 if use_network:
-                    data_list.append((row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], '<a href=Puma-Trac/'+str(row[0])+'.kml class="badge badge-light" target="_blank">'+str(row[0])+'.kml</a>', '<a href=Puma-Trac/'+str(row[0])+'.xlsx class="badge badge-light" target="_blank">'+str(row[0])+'.xlsx</a>', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(id)+'\')">Show Map</button>'))
+                    data_list.append(
+                        (
+                            row[0],
+                            row[1],
+                            row[2],
+                            row[3],
+                            row[4],
+                            row[5],
+                            row[6],
+                            row[7],
+                            row[8],
+                            row[9],
+                            row[10],
+                            row[11],
+                            row[12],
+                            row[13],
+                            row[14],
+                            row[15],
+                            '<a href=Puma-Trac/' + str(row[0]) + '.kml class="badge badge-light" target="_blank">' + str(row[0]) + '.kml</a>',
+                            '<a href=Puma-Trac/' + str(row[0]) + '.xlsx class="badge badge-light" target="_blank">' + str(row[0]) + '.xlsx</a>',
+                            map_link,
+                        )
+                    )
                 else:
                     data_list.append((row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9],
                                       row[10], row[11], row[12], row[13], row[14], row[15], '<a href=Puma-Trac/' + str(
                         row[0]) + '.kml class="badge badge-light" target="_blank">' + str(row[0]) + '.kml</a>',
                                       'N/A',
-                                      '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\'' + str(
-                                          id) + '\')">Show Map</button>'))
+                                      map_link))
             else:
                 data_list.append((row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14], row[15], 'N/A', 'N/A', 'N/A'))
 
@@ -235,9 +260,26 @@ def get_puma_activities(files_found, report_folder, seeker, wrap_text):
         report.add_heat_map(json.dumps(activity_json))
         table_id = "PumaActivities"
         report.filter_by_date(table_id, 1)
-        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=table_id, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['Coordinates KML', 'Coordinates Excel', 'Button'],
+        )
         # Add the map to the report
         report.add_section_heading('Puma Polyline Map')
+        report.script_code += """
+<script>
+$(document).on('click', 'a.puma-activities-map-link', function(event) {
+    event.preventDefault();
+    const target = (this.getAttribute('href') || '').replace(/^#/, '');
+    if (target) {
+        openMap(target);
+    }
+});
+</script>
+"""
         for htmlMap in html_map:
             report.add_map(htmlMap)
         report.end_artifact_report()

@@ -50,7 +50,7 @@ def get_dailies_api(files_found, report_folder, seeker, wrap_text):
                     data_row.append('N/A')
             data_list.append((row for row in data_row))
     report.filter_by_date('GarminDailyAPI', 0)
-    report.write_artifact_data_table(data_headers, data_list, file, html_escape=False, table_id='GarminDailyAPI')
+    report.write_artifact_data_table(data_headers, data_list, file, table_id='GarminDailyAPI')
     report.end_artifact_report()
     tsvname = f'Garmin Log'
     tsv(report_folder, data_headers, data_list, tsvname)

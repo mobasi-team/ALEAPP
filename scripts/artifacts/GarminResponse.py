@@ -9,6 +9,15 @@ from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv, timeline, open_sqlite_db_readonly
 
 
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
+
+
 def get_garmin_response(files_found, report_folder, seeker, wrap_text):
     logfunc("Processing data for Garmin Response")
     files_found = [x for x in files_found if not x.endswith('wal') and not x.endswith('shm')]
@@ -34,13 +43,28 @@ def get_garmin_response(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Last Update', 'Request URL', 'Response')
         data_list = []
+        response_actions = {}
 
-        for row in all_rows:
-            data_list.append((row[2], row[0], '<button class="btn btn-light btn-sm" onclick="changeJSON(' + str(row[3]) + ')">View</button>'))
+        for index, row in enumerate(all_rows):
+            action_id = f'garmin-response-action-{index}'
+            response_actions[action_id] = str(row[3])
+            data_list.append(
+                (
+                    row[2],
+                    row[0],
+                    f'<a class="btn btn-light btn-sm garmin-response-view" href="#" id="{action_id}">View</a>',
+                )
+            )
 
         table_id = 'garmin_response'
         report.filter_by_date(table_id, 0)
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False, table_id=table_id)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['Response'],
+        )
 
         # Insert pretty JSON into the report
         i = 0
@@ -57,6 +81,25 @@ def get_garmin_response(files_found, report_folder, seeker, wrap_text):
             else:
                 report.add_json_to_artifact("Response", jsonData, True, row[3])
             i += 1
+        response_actions_js = _to_safe_inline_json(response_actions)
+        report.script_code += f"""<script>
+           (function() {{
+               const actionMap = {response_actions_js};
+               document.addEventListener('click', function(event) {{
+                   const trigger = event.target.closest('a.garmin-response-view');
+                   if (!trigger) {{
+                       return;
+                   }}
+                   event.preventDefault();
+                   const target = actionMap[trigger.id];
+                   if (typeof target === 'undefined') {{
+                       return;
+                   }}
+                   changeJSON(String(target));
+               }});
+           }})();
+           </script>
+           """
         report.add_script('<script>hljs.highlightAll();</script>')
         report.end_artifact_report()
 

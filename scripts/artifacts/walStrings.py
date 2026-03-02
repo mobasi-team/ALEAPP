@@ -4,6 +4,7 @@ import string
 
 from pathlib import Path
 from scripts.artifact_report import ArtifactHtmlReport
+from scripts.html_security import escape_attr, escape_text, sanitize_url
 from scripts.ilapfuncs import logfunc, is_platform_windows
 
 control_chars = ''.join(map(chr, range(0,32))) + ''.join(map(chr, range(127,160)))
@@ -11,6 +12,13 @@ not_control_char_re = re.compile(f'[^{control_chars}]' + '{4,}')
 # If  we only want ascii, use 'ascii_chars_re' below
 printable_chars_for_re = string.printable.replace('\\', '\\\\').replace('[', '\\[').replace(']', '\\]')
 ascii_chars_re = re.compile(f'[{printable_chars_for_re}]' + '{4,}')
+
+
+def _safe_anchor_html(url, label=None):
+    safe_href = escape_attr(sanitize_url(url))
+    text = label if label is not None else url
+    safe_label = escape_text(text)
+    return f'<a href="{safe_href}" style="color:blue" target="_blank" rel="noopener noreferrer">{safe_label}</a>'
 
 def get_walStrings(files_found, report_folder, seeker, wrap_text):
     x = 1
@@ -40,7 +48,7 @@ def get_walStrings(files_found, report_folder, seeker, wrap_text):
             g.close()
 
         if unique_items:
-            out = (f'<a href="{final}" style = "color:blue" target="_blank">{journalName}</a>')
+            out = _safe_anchor_html(final, journalName)
             data_list.append((out, file_found))
         else:
             try:
@@ -55,7 +63,7 @@ def get_walStrings(files_found, report_folder, seeker, wrap_text):
     report.start_artifact_report(report_folder, 'Strings - SQLite Journal & WAL', description)
     report.add_script()
     data_headers = ('Report', 'Location')
-    report.write_artifact_data_table(data_headers, data_list, location, html_escape=False)
+    report.write_artifact_data_table(data_headers, data_list, location, html_no_escape=['Report'])
     report.end_artifact_report()
 
 __artifacts__ = {

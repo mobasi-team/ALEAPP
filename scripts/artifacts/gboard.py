@@ -302,7 +302,7 @@ def read_trainingcachev3_sessions(file_found, report_folder, seeker):
         report = ArtifactHtmlReport(title)
         report.start_artifact_report(report_folder, title, description)
         report.add_script()
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, file_found)
         report.end_artifact_report()
 
         tsv(report_folder, data_headers, data_list, title)

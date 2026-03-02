@@ -85,7 +85,7 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                     conv_mdate = convert_utc_human_to_timezone(mdatetime_obj_no_microseconds, 'UTC')
                     data_list.append((conv_cdate,conv_mdate,row[5],row[6],row[7],row[0],row[1],row[2]))
 
-                report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = f"ChatGPT - Conversations Metadata - {file_name[:-17]}"
@@ -158,7 +158,7 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                         data_list.append((message_date,row[0],row[1],row[2],row[3],row[4],row[6],row[7],row[8],row[9],row[10],row[11],row[12],row[13],row[14]))
                     else:
                         data_list.append((row[5],row[0],row[1],row[2],row[3],row[4],row[6],row[7],row[8],row[9],row[10],row[11],row[12],row[13],row[14]))
-                report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = f"ChatGPT - Conversations - {file_name[:-17]}"
@@ -199,7 +199,7 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                         report.start_artifact_report(report_folder, f'User', description)
                         report.add_script()
                         data_headers = ('User-ID', 'Email','Name','Account Creation Time','Picture')
-                        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                        report.write_artifact_data_table(data_headers, data_list, file_found)
                         report.end_artifact_report()
                         
                         tsvname = f'ChatGPT - User'
@@ -241,7 +241,7 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                         report.start_artifact_report(report_folder, f'Account Status', description)
                         report.add_script()
                         data_headers = ('Account','Account-ID', 'Account-User-ID','Subscription Plan','Plan Type','Subscription Purchase Origin','Subscription Will Renew','Structure','Is Deactivated')
-                        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                        report.write_artifact_data_table(data_headers, data_list, file_found)
                         report.end_artifact_report()
                         
                         tsvname = f'ChatGPT - Account Status'
@@ -292,7 +292,7 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                         report.start_artifact_report(report_folder, f'Account User State', description)
                         report.add_script()
                         data_headers = ('Is Active Account','Account-ID', 'User-ID','Account-User-ID','Email','Name','Account Creation Time','Subscription Plan','Plan Type','Subscription Purchase Origin','Subscription Will Renew','Plan Expiration Date','Structure','Is Deactivated','Picture')
-                        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                        report.write_artifact_data_table(data_headers, data_list, file_found)
                         report.end_artifact_report()
                         
                         tsvname = f'ChatGPT - Account User State'
@@ -324,7 +324,7 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                         report.start_artifact_report(report_folder, f'Custom Instructions', description)
                         report.add_script()
                         data_headers = ('Are Enabled','About User Message', 'About Model Message')
-                        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                        report.write_artifact_data_table(data_headers, data_list, file_found)
                         report.end_artifact_report()
                         
                         tsvname = f'ChatGPT - Custom Instructions'
@@ -357,7 +357,7 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                         report.start_artifact_report(report_folder, f'User Settings', description)
                         report.add_script()
                         data_headers = ('Chat History Disabled','Seen Custom Instructions Intro', 'Seen Voice Intro','Seen Voice Selection')
-                        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                        report.write_artifact_data_table(data_headers, data_list, file_found)
                         report.end_artifact_report()
                         
                         tsvname = f'ChatGPT - User Settings'
@@ -397,7 +397,7 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                 report.start_artifact_report(report_folder, f'User Analytics', description)
                 report.add_script()
                 data_headers = ('User-ID','Anonymous-ID', 'Email','Device-ID','Workspace-ID','Account Has Plus','Plan Type','Has Active Subscription','App Version')
-                report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+                report.write_artifact_data_table(data_headers, data_list, file_found)
                 report.end_artifact_report()
                 
                 tsvname = f'ChatGPT - User Analytics'
@@ -427,7 +427,12 @@ def get_chatgpt(files_found, report_folder, seeker, wrap_text):
                     report.start_artifact_report(report_folder, 'Media Uploads', description)
                     report.add_script()
                     data_headers = ('Thumbnail','Filename','Location' )
-                    report.write_artifact_data_table(data_headers, data_list, filepath, html_escape=False)
+                    report.write_artifact_data_table(
+                        data_headers,
+                        data_list,
+                        filepath,
+                        html_no_escape=['Thumbnail'],
+                    )
                     report.end_artifact_report()
                     
                     tsvname = 'ChatGPT - Media Uploads'

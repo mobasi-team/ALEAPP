@@ -71,7 +71,7 @@ def get_googleTasks(files_found, report_folder, seeker, wrap_text):
 
             data_list = all_new_rows
 
-            report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+            report.write_artifact_data_table(data_headers, data_list, file_found)
             report.end_artifact_report()
 
             tsvname = "Google Tasks"

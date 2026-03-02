@@ -124,7 +124,7 @@ def get_googleNowPlaying(files_found, report_folder, seeker, wrap_text):
             if last_data_set:
                 data_list.append(last_data_set)
             logfunc("{} entries grouped into {}".format(usageentries, len(data_list)))
-            report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False)
+            report.write_artifact_data_table(data_headers, data_list, file_found, html_no_escape=['Timestamp'])
             report.end_artifact_report()
             
             tsvname = f'Google Now Playing'

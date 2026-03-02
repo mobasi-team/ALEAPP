@@ -42,7 +42,12 @@ def get_torThumbs(files_found, report_folder, seeker, wrap_text):
         report.start_artifact_report(report_folder, 'TOR Thumbnails', description)
         report.add_script()
         data_headers = ('Modified Time','Thumbnail','Filename','Location' )
-        report.write_artifact_data_table(data_headers, data_list, path_to_files, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            path_to_files,
+            html_no_escape=['Thumbnail'],
+        )
         report.end_artifact_report()
         
         tsvname = 'TOR Thumbnails'

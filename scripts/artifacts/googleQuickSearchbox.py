@@ -146,7 +146,7 @@ def get_quicksearch(files_found, report_folder, seeker, wrap_text):
                 response = f'<audio controls><source src="{folder_name}/{filename}"></audio>'
             data_list.append( (s.file_last_mod_date, s.session_type, escape(', '.join(s.session_queries)), response, s.source_file) )
 
-        report.write_artifact_data_table(data_headers, data_list, base_folder, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, base_folder, html_no_escape=['Response'])
         report.end_artifact_report()
         
         tsvname = f'google quick search box'

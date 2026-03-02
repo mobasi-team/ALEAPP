@@ -34,6 +34,11 @@ import os
 import urllib.parse
 
 from scripts.ilapfuncs import open_sqlite_db_readonly, artifact_processor, convert_unix_ts_to_utc, logfunc, media_to_html
+from scripts.html_security import sanitize_html_fragment
+
+
+def _sanitize_email_html(value):
+    return sanitize_html_fragment(value)
 
 @artifact_processor
 def gmailIMAPEmails(files_found, report_folder, _seeker, _wrap_text):
@@ -102,7 +107,7 @@ def gmailIMAPEmails(files_found, report_folder, _seeker, _wrap_text):
             for htmlBody in bodyHtml_list:
                 if ((os.path.basename(htmlBody)) == (str(row[1]) + '.html')):
                     with open(htmlBody, "r", encoding="utf-8") as f:
-                        hBody = f.read()
+                        hBody = _sanitize_email_html(f.read())
             
             # ATTACHMENTS - Files can be stored in two different locations depending if they are sent or received.            
             AttachmentPaths = []

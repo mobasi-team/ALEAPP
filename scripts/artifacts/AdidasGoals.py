@@ -61,7 +61,7 @@ def get_adidas_goals(files_found, report_folder, seeker, wrap_text):
         data_list.append((id, metric, remote_id, user_id, version, target, recurrence, start_date, end_date, sport_types, created_at, updated_at, deleted_at))
 
         table_id = "AdidasGoals"
-        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=table_id, html_escape=False)
+        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=table_id)
         report.end_artifact_report()
 
         tsvname = f'Adidas - Goals'

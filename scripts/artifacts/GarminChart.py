@@ -4,8 +4,19 @@
 # Version: 1.0
 # Requirements: Python 3.7 or higher
 
+import json
+
 from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv, timeline, open_sqlite_db_readonly
+
+
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
 
 
 def get_garmin_chart(files_found, report_folder, seeker, wrap_text):
@@ -56,6 +67,7 @@ def get_garmin_chart(files_found, report_folder, seeker, wrap_text):
         data_list = []
         imgs = []
         i = 0
+        chart_actions = {}
 
         for row in all_rows:
             # convert string to list
@@ -70,7 +82,23 @@ def get_garmin_chart(files_found, report_folder, seeker, wrap_text):
             x_list = [round(i / 60, 2) for i in x_list]
 
             #changeImage is a JS function that will open the image in the html report
-            data_list.append((row[0], row[3], row[1], row[2], row[4], row[5], row[6], row[7], row[8], row[9], '<button class="btn btn-light btn-sm" onclick="createLineChart(\'' + str(y_list) + '\', \'' + str(x_list) + '\', false, \'Heart Rate Variation\', \'Duration\', \'BPM\')">View</button>'))
+            action_id = f'garmin-chart-action-{len(chart_actions)}'
+            chart_actions[action_id] = {'x': x_list, 'y': y_list}
+            data_list.append(
+                (
+                    row[0],
+                    row[3],
+                    row[1],
+                    row[2],
+                    row[4],
+                    row[5],
+                    row[6],
+                    row[7],
+                    row[8],
+                    row[9],
+                    f'<a class="btn btn-light btn-sm garmin-chart-view" href="#" id="{action_id}">View</a>',
+                )
+            )
             i += 1
 
         # Add graph to the report
@@ -79,7 +107,39 @@ def get_garmin_chart(files_found, report_folder, seeker, wrap_text):
         table_id = "garmin_chart"
         report.filter_by_date(table_id, 1)
 
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False, table_id=table_id)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['Change Image'],
+        )
+        chart_actions_js = _to_safe_inline_json(chart_actions)
+        report.script_code += f"""<script>
+           (function() {{
+               const chartActions = {chart_actions_js};
+               document.addEventListener('click', function(event) {{
+                   const trigger = event.target.closest('a.garmin-chart-view');
+                   if (!trigger) {{
+                       return;
+                   }}
+                   event.preventDefault();
+                   const payload = chartActions[trigger.id];
+                   if (!payload) {{
+                       return;
+                   }}
+                   createLineChart(
+                       JSON.stringify(payload.y || []),
+                       JSON.stringify(payload.x || []),
+                       false,
+                       'Heart Rate Variation',
+                       'Duration',
+                       'BPM'
+                   );
+               }});
+           }})();
+           </script>
+           """
         # Added feature for displaying the image in the html report
         report.add_chart()
         report.end_artifact_report()

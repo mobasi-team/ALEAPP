@@ -205,15 +205,47 @@ def get_poly_api(files_found, report_folder, seeker, wrap_text):
                 with open(report_folder + '/' + str(activity_id) + '.kml', 'w') as f:
                     f.write(kml)
                     f.close()
+            map_link = (
+                f'<a href="#{activity_id}" class="btn btn-light btn-sm garmin-polyapi-map-link">'
+                'Show Map</a>'
+            )
             if use_network:
-                data_list.append((activity_id, start_time, end_time, start, end, '<a href=Garmin-API/'+str(activity_id)+'.kml class="badge badge-light" target="_blank">'+str(activity_id)+'.kml</a>', '<a href=Garmin-API/'+str(activity_id)+'.xlsx class="badge badge-light" target="_blank">'+str(activity_id)+'.xlsx</a>', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(activity_id)+'\')">Show Map</button>'))
+                data_list.append(
+                    (
+                        activity_id,
+                        start_time,
+                        end_time,
+                        start,
+                        end,
+                        '<a href=Garmin-API/' + str(activity_id) + '.kml class="badge badge-light" target="_blank">' + str(activity_id) + '.kml</a>',
+                        '<a href=Garmin-API/' + str(activity_id) + '.xlsx class="badge badge-light" target="_blank">' + str(activity_id) + '.xlsx</a>',
+                        map_link,
+                    )
+                )
             else:
-                data_list.append((activity_id, start_time, end_time, start, end, str(activity_id)+'.kml', 'N/A', '<button type="button" class="btn btn-light btn-sm" onclick="openMap(\''+str(activity_id)+'\')">Show Map</button>'))
+                data_list.append((activity_id, start_time, end_time, start, end, str(activity_id)+'.kml', 'N/A', map_link))
 
     report.filter_by_date('GarminPolyAPI', 1)
-    report.write_artifact_data_table(data_headers, data_list, file, html_escape=False, table_id='GarminPolyAPI')
+    report.write_artifact_data_table(
+        data_headers,
+        data_list,
+        file,
+        table_id='GarminPolyAPI',
+        html_no_escape=['Coordinates KML', 'Coordiantes Excel', 'Button'],
+    )
     # Add the map to the report
     report.add_section_heading('Garmin Polyline Map')
+    report.script_code += """
+<script>
+$(document).on('click', 'a.garmin-polyapi-map-link', function(event) {
+    event.preventDefault();
+    const target = (this.getAttribute('href') || '').replace(/^#/, '');
+    if (target) {
+        openMap(target);
+    }
+});
+</script>
+"""
     for htmlMap in html_map:
         report.add_map(htmlMap)
     report.end_artifact_report()

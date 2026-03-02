@@ -4,8 +4,19 @@
 # Version: 1.0
 # Requirements: Python 3.7 or higher
 
+import json
+
 from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv, timeline, open_sqlite_db_readonly
+
+
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
 
 
 def get_garmin_spo2(files_found, report_folder, seeker, wrap_text):
@@ -46,6 +57,7 @@ def get_garmin_spo2(files_found, report_folder, seeker, wrap_text):
         y_list = []
         spo2Avg = []
         date = []
+        chart_actions = {}
 
         for row in all_rows:
             # spo2ValuesArray
@@ -79,8 +91,17 @@ def get_garmin_spo2(files_found, report_folder, seeker, wrap_text):
             # only get the date from the timestamp
             date.append(row[6].split(' ')[0])
 
-            data_list.append((row[0], row[1], row[2], spo2Average,
-                              '<button class="btn btn-light btn-sm" onclick="createLineChart(\'' + str(y_list) + '\', \'' + str(x_list) + '\', true, \'Spo2 Variation\', \'Time\', \'Spo2%\')">View</button>'))
+            action_id = f'garmin-spo2-chart-action-{len(chart_actions)}'
+            chart_actions[action_id] = {'x': list(x_list), 'y': list(y_list)}
+            data_list.append(
+                (
+                    row[0],
+                    row[1],
+                    row[2],
+                    spo2Average,
+                    f'<a class="btn btn-light btn-sm garmin-spo2-chart-view" href="#" id="{action_id}">View</a>',
+                )
+            )
             i += 1
 
         # Create bar chart with SPO2 average per day
@@ -102,7 +123,39 @@ def get_garmin_spo2(files_found, report_folder, seeker, wrap_text):
         # Add graph to the report
         table_id = "spo2"
         report.filter_by_date(table_id, 1)
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False, table_id=table_id)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['SPO2 Values Array'],
+        )
+        chart_actions_js = _to_safe_inline_json(chart_actions)
+        report.script_code += f"""<script>
+           (function() {{
+               const chartActions = {chart_actions_js};
+               document.addEventListener('click', function(event) {{
+                   const trigger = event.target.closest('a.garmin-spo2-chart-view');
+                   if (!trigger) {{
+                       return;
+                   }}
+                   event.preventDefault();
+                   const payload = chartActions[trigger.id];
+                   if (!payload) {{
+                       return;
+                   }}
+                   createLineChart(
+                       JSON.stringify(payload.y || []),
+                       JSON.stringify(payload.x || []),
+                       true,
+                       'Spo2 Variation',
+                       'Time',
+                       'Spo2%'
+                   );
+               }});
+           }})();
+           </script>
+           """
         # Add image to the report
         report.add_chart()
         # report.add_image_file(imgName, imgName, "Garmin SPO2 Average", secondImage=True)

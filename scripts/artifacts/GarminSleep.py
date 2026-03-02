@@ -48,7 +48,11 @@ def get_garmin_sleep(files_found, report_folder, seeker, wrap_text):
             sleepValues.append(row[5])
             sleepValues.append(row[6])
 
-            sleep_btn = "<button class='btn btn-light btn-sm' onclick=" + '"createPieChart(\'' + str(sleepValues) + '\')">Sleep Graphic</button>'
+            sleep_payload = ','.join(str(value if value is not None else 0) for value in sleepValues)
+            sleep_btn = (
+                f'<a href="#myChart" class="btn btn-light btn-sm garmin-sleep-chart-link" '
+                f'title="{sleep_payload}">Sleep Graphic</a>'
+            )
             data_list.append((row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], sleep_btn))
 
         # Add graph to the report
@@ -56,8 +60,23 @@ def get_garmin_sleep(files_found, report_folder, seeker, wrap_text):
         table_id = 'garmin_sleep'
         report.filter_by_date(table_id, 0)
 
-        report.write_artifact_data_table(data_headers, data_list, file_found, html_escape=False, table_id=table_id)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['Graph'],
+        )
         report.add_chart(200)
+        report.script_code += """
+<script>
+$(document).on('click', 'a.garmin-sleep-chart-link', function(event) {
+    event.preventDefault();
+    const values = this.getAttribute('title') || '0,0,0,0';
+    createPieChart('[' + values + ']');
+});
+</script>
+"""
         report.end_artifact_report()
 
         tsvname = f'Garmin - Sleep'

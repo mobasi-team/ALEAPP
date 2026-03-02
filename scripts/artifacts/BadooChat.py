@@ -6,7 +6,47 @@
 import json
 
 from scripts.artifact_report import ArtifactHtmlReport
+from scripts.html_security import escape_attr, sanitize_url
 from scripts.ilapfuncs import logfunc, tsv, timeline, open_sqlite_db_readonly
+
+
+def _build_profile_image_html(user_image_url):
+    safe_src = escape_attr(sanitize_url(user_image_url))
+    return f'<img src="{safe_src}" width="100" height="100" alt="User image">'
+
+
+def _build_photo_links_html(user_photos):
+    links = []
+    for index, photo in enumerate(user_photos, 1):
+        safe_url = escape_attr(sanitize_url(photo.get('url', '')))
+        links.append(f'<a href="{safe_url}" target="_blank" rel="noopener noreferrer">Photo {index}</a><br>')
+    return ''.join(links)
+
+
+def _build_open_chat_link(encrypted_user_id, user_image_url):
+    safe_user_id = escape_attr(encrypted_user_id)
+    safe_avatar_url = escape_attr(sanitize_url(user_image_url))
+    return (
+        f'<a href="#" class="btn btn-primary badoo-open-chat" rel="{safe_user_id}" '
+        f'title="{safe_avatar_url}">Open Chat</a>'
+    )
+
+
+def _build_chat_bind_script():
+    return """
+<script>
+$(document).ready(function () {
+    $(document).on('click', 'a.badoo-open-chat', function (event) {
+        event.preventDefault();
+        const sender = $(this).attr('rel');
+        const avatarUrl = $(this).attr('title') || '';
+        if (sender) {
+            createChat(sender, avatarUrl);
+        }
+    });
+});
+</script>
+"""
 
 
 def get_badoo_chat(files_found, report_folder, seeker, wrap_text):
@@ -29,6 +69,7 @@ def get_badoo_chat(files_found, report_folder, seeker, wrap_text):
         report = ArtifactHtmlReport('Chat')
         report.start_artifact_report(report_folder, 'Badoo Chat')
         report.add_script()
+        report.script_code += _build_chat_bind_script()
         data_headers = ('ID', 'Gender', 'User Name', 'User Image URL', 'Age', 'User Photos', 'Work', 'Education', 'Encrypted User ID', 'Button')
         data_list = []
 
@@ -43,25 +84,24 @@ def get_badoo_chat(files_found, report_folder, seeker, wrap_text):
                 gender_text = "Other"
             user_name = row[2]
             user_image_url = row[3]
-            user_image = '<img src="' + user_image_url + '" width="100" height="100">'
+            user_image = _build_profile_image_html(user_image_url)
             age = row[4]
             user_photos = row[5]
             # convert string to array
             user_photos = json.loads(user_photos)
-            photo_urls = ''
-            for i in range(len(user_photos)):
-                photo_url = user_photos[i]['url']
-                #photo_urls = photo_urls + '<img src="' + photo_url + '" width="100" height="100">'
-                photo_urls = photo_urls + '<a href="' + photo_url + '" target="_blank">Photo ' + str(i+1) + '</a><br>'
+            photo_urls = _build_photo_links_html(user_photos)
 
             work = row[6]
             education = row[7]
             encrypted_user_id = row[8]
-            cursor.execute(f'''
-                                        Select sender_id, recipient_id, datetime("created_timestamp"/1000,'unixepoch'), payload, payload_type
-                                        from message
-                                        where sender_id = '{encrypted_user_id}' or recipient_id = '{encrypted_user_id}'
-                                    ''')
+            cursor.execute(
+                '''
+                Select sender_id, recipient_id, datetime("created_timestamp"/1000,'unixepoch'), payload, payload_type
+                from message
+                where sender_id = ? or recipient_id = ?
+                ''',
+                (encrypted_user_id, encrypted_user_id),
+            )
             messages = cursor.fetchall()
             usageentries_m = len(messages)
             if usageentries_m > 0:
@@ -96,13 +136,19 @@ def get_badoo_chat(files_found, report_folder, seeker, wrap_text):
                 chat = {'name': user_name, 'messages': message_list}
                 chat = json.dumps(chat)
                 report.add_chat_invisble(encrypted_user_id, chat)
-                button = f'<button type="button" class="btn btn-primary" onclick="createChat(\'' + str(encrypted_user_id) + '\', \'' + str(user_image_url) + '\')">Open Chat</button>'
+                button = _build_open_chat_link(encrypted_user_id, user_image_url)
             else:
-                button = '<button type="button" class="btn btn-primary" disabled>Open Chat</button>'
+                button = '<span class="btn btn-primary disabled" role="button" aria-disabled="true">Open Chat</span>'
             data_list.append((id, gender_text, user_name, user_image, age, photo_urls, work, education, encrypted_user_id, button))
         # Filter by date
         table_id = "BadooChat"
-        report.write_artifact_data_table(data_headers, data_list, file_found, table_id=table_id, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file_found,
+            table_id=table_id,
+            html_no_escape=['User Image URL', 'User Photos', 'Button'],
+        )
         # Add the map to the report
         report.add_section_heading('Badoo Chat')
         report.add_chat()

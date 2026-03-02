@@ -11,6 +11,15 @@ from scripts.artifact_report import ArtifactHtmlReport
 from scripts.ilapfuncs import logfunc, tsv
 
 
+def _to_safe_inline_json(value):
+    return (
+        json.dumps(value)
+        .replace('<', '\\u003c')
+        .replace('>', '\\u003e')
+        .replace('&', '\\u0026')
+    )
+
+
 def get_sleep_api(files_found, report_folder, seeker, wrap_text):
     logfunc("Processing data for Garmin Sleep API")
     file = str(files_found[0])
@@ -26,6 +35,8 @@ def get_sleep_api(files_found, report_folder, seeker, wrap_text):
         report.add_script()
         data_headers = ('Date', 'Sleep Time', 'Start Time', 'End Time', 'Deep Sleep', 'Light Sleep', 'REM Sleep', 'Awake Sleep', 'Average SPo2', 'Lowest SPo2', 'Highest SPo2', 'Sleep Graphic', 'SPo2 Graphic')
         data_list = []
+        sleep_actions = {}
+        spo2_actions = {}
         for i in data:
             # Get calendar date
             date = i['dailySleepDTO']['calendarDate']
@@ -98,23 +109,60 @@ def get_sleep_api(files_found, report_folder, seeker, wrap_text):
                 if start_time == 'N/A' or end_time == 'N/A':
                     sleep_btn = 'N/A'
                 else:
-                    sleeplevels = json.dumps(i['sleepLevels'])
-                    # replace " with &quot; to avoid errors in the html
-                    sleeplevels = sleeplevels.replace('"', '&quot;')
-                    sleep_btn = "<button class='btn btn-light btn-sm' onclick=" + '"generateChartSleep(\'' + sleeplevels + '\')">Sleep Graphic</button>'
+                    sleep_action_id = f'garmin-sleep-action-{len(sleep_actions)}'
+                    sleep_actions[sleep_action_id] = i['sleepLevels']
+                    sleep_btn = (
+                        f'<a class="btn btn-light btn-sm garmin-sleep-graphic" href="#" id="{sleep_action_id}">'
+                        'Sleep Graphic</a>'
+                    )
             else:
                 sleep_btn = 'N/A'
             # check if i['wellnessEpochSPO2DataDTOList'] exists
             if 'wellnessEpochSPO2DataDTOList' in i:
-                spo2 = json.dumps(i['wellnessEpochSPO2DataDTOList'])
-                # replace " with &quot; to avoid errors in the html
-                spo2 = spo2.replace('"', '&quot;')
-                spo2_btn = '<button class="btn btn-light btn-sm" onclick="spo2Chart(\'' + spo2 + '\')">SPo2 Graphic</button>'
+                spo2_action_id = f'garmin-sleep-spo2-action-{len(spo2_actions)}'
+                spo2_actions[spo2_action_id] = i['wellnessEpochSPO2DataDTOList']
+                spo2_btn = (
+                    f'<a class="btn btn-light btn-sm garmin-sleep-spo2" href="#" id="{spo2_action_id}">'
+                    'SPo2 Graphic</a>'
+                )
             else:
                 spo2_btn = 'N/A'
             data_list.append((date, sleep_time, start_time, end_time, deep_sleep, light_sleep, rem_sleep, awake_sleep, average_spo2, lowest_spo2, highest_spo2, sleep_btn, spo2_btn))
         report.filter_by_date('GarminSleepAPI', 0)
-        report.write_artifact_data_table(data_headers, data_list, file, html_escape=False, table_id='GarminSleepAPI')
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            file,
+            table_id='GarminSleepAPI',
+            html_no_escape=['Sleep Graphic', 'SPo2 Graphic'],
+        )
+        sleep_actions_js = _to_safe_inline_json(sleep_actions)
+        spo2_actions_js = _to_safe_inline_json(spo2_actions)
+        report.script_code += f"""<script>
+           (function() {{
+               const sleepActions = {sleep_actions_js};
+               const spo2Actions = {spo2_actions_js};
+               document.addEventListener('click', function(event) {{
+                   const sleepTrigger = event.target.closest('a.garmin-sleep-graphic');
+                   if (sleepTrigger) {{
+                       event.preventDefault();
+                       if (typeof sleepActions[sleepTrigger.id] !== 'undefined') {{
+                           generateChartSleep(JSON.stringify(sleepActions[sleepTrigger.id]));
+                       }}
+                       return;
+                   }}
+                   const spo2Trigger = event.target.closest('a.garmin-sleep-spo2');
+                   if (!spo2Trigger) {{
+                       return;
+                   }}
+                   event.preventDefault();
+                   if (typeof spo2Actions[spo2Trigger.id] !== 'undefined') {{
+                       spo2Chart(JSON.stringify(spo2Actions[spo2Trigger.id]));
+                   }}
+               }});
+           }})();
+           </script>
+           """
         report.add_chart()
         report.end_artifact_report()
         tsvname = f'Garmin Log'

@@ -26,7 +26,7 @@ def get_ChessComFriends(files_found, report_folder, seeker, wrap_text):
     report = ArtifactHtmlReport(title)
     report.start_artifact_report(report_folder, title, description)
     report.add_script()
-    report.write_artifact_data_table(data_headers, data_list, db_filepath, html_escape=False)
+    report.write_artifact_data_table(data_headers, data_list, db_filepath)
     report.end_artifact_report()
     
     tsv(report_folder, data_headers, data_list, title)
@@ -37,4 +37,3 @@ __artifacts__ = {
                 ('*/com.chess/databases/chess-database*'),
                 get_ChessComFriends)
 }
-

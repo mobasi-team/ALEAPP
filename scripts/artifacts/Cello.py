@@ -36,6 +36,10 @@ def get_Cello(files_found, report_folder, seeker, wrap_text):
     
     data_list = []
     tsv_list = []
+    if report_folder[-1] == slash:
+        folder_name = os.path.basename(report_folder[:-1])
+    else:
+        folder_name = os.path.basename(report_folder)
     
     for file_found in files_found:
         file_found = str(file_found)
@@ -104,18 +108,15 @@ def get_Cello(files_found, report_folder, seeker, wrap_text):
                                 destination_path = get_next_unused_name(os.path.join(report_folder, doc_name))
                                 shutil.copy2(offline_path, destination_path)
                                 dest_name = os.path.basename(destination_path)
-                                doc_name = f"<a href=\"{folder_name}/{dest_name}\" target=\"_blank\" style=\"color:green; font-weight:bolder\">{doc_name}</a>"
+                                doc_name = f"<a href=\"{folder_name}/{dest_name}\" target=\"_blank\">{doc_name}</a>"
                             else:
                                 logfunc(f'File {doc_name} not present offline!')
                         else:
                             logfunc(f'File {doc_name} not present offline!')
                     if row[8] == "Yes":
-                        doc_name = '<i data-feather="folder"></i> ' + doc_name
+                        doc_name = f'[Folder] {doc_name}'
                     else:
-                        if doc_name.startswith('<a href'):
-                            doc_name = '<i data-feather="file" stroke="green"></i> ' + doc_name
-                        else:
-                            doc_name = '<i data-feather="file"></i> ' + doc_name
+                        doc_name = f'[File] {doc_name}'
                             
                     created_date = row[0]
                     if created_date in (None, ''):
@@ -154,11 +155,6 @@ def get_Cello(files_found, report_folder, seeker, wrap_text):
         else:
             continue # skip -journal and other files
 
-        if report_folder[-1] == slash: 
-            folder_name = os.path.basename(report_folder[:-1])
-        else:
-            folder_name = os.path.basename(report_folder)
-
     if data_list:
         account_name = os.path.basename(os.path.dirname(cello_db))
             
@@ -168,7 +164,12 @@ def get_Cello(files_found, report_folder, seeker, wrap_text):
         data_headers = ('Created Date','File Name','Modified Date','Shared with User Date','Modified by User Date','Viewed by User Date','Mime Type', \
                         'Offline','Quota Size','Folder','User is Owner','Deleted','Source File')
 
-        report.write_artifact_data_table(data_headers, data_list, cello_db, html_escape=False)
+        report.write_artifact_data_table(
+            data_headers,
+            data_list,
+            cello_db,
+            html_no_escape=['File Name'],
+        )
         report.end_artifact_report()
         
         tsvname = f'Google Drive - Cello - {account_name}'
